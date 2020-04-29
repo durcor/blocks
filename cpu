@@ -1,10 +1,8 @@
 #!/bin/sh
 
 case $BLOCK_BUTTON in
-	1) notify-send -i /dev/null "CPU hogs" "$(ps axch -o cmd:15,%cpu --sort=-%cpu | head)" ;;
-	3) notify-send "CPU module" "- Shows CPU temperature.
-- Click to show intensive processes.
-- % is of single core." ;;
+    1) notify-send "Info for $(neofetch cpu)" "$(sensors | grep -A8 k10)" ;;
+	3) notify-send -i /dev/null "CPU hogs" "$(ps axch -o cmd:15,%cpu --sort=-%cpu | head)" ;;
 esac
 
 threads="$(grep -c "^processor" /proc/cpuinfo)"
