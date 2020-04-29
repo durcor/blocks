@@ -1,0 +1,14 @@
+#!/bin/sh
+case $BLOCK_BUTTON in
+    1) systemctl --user restart mailsync ;;
+	2) tmux selectw -t ;;
+    3) systemctl --user restart mailsync ;;
+esac
+
+if cat /tmp/imapsyncicon_$USER >/dev/null ; then
+    icon=
+else
+    icon=
+fi
+
+echo "$icon  $(du -a ~/.local/share/mail/*/INBOX/new/* | sed -n '$=')"

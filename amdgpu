@@ -1,0 +1,24 @@
+#!/bin/sh
+
+case $BLOCK_BUTTON in
+	1) ;;
+	3) echo ;;
+esac
+
+usage=$(cat /sys/class/drm/card0/device/gpu_busy_percent)
+
+if [ "$usage" -ge 90 ] ; then
+    icon="  "
+elif [ "$usage" -ge 60 ] ; then
+    icon="  "
+elif [ "$usage" -ge 40 ] ; then
+    icon="  "
+elif [ "$usage" -ge 10 ] ; then
+    icon="  "
+else
+    icon="  "
+fi
+
+command=$(sensors | awk '/^junction/ {print $2}')
+
+echo "$icon  $command"
