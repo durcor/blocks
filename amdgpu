@@ -1,12 +1,23 @@
 #!/bin/sh
 
+gpu_info(){
+    gpu_info_dir=/sys/class/drm/card0/device/
+    notify-send "Info for $(neofetch gpu)" "
+Shader Usage: $(cat $gpu_info_dir/gpu_busy_percent)%
+Memory Usage: $(cat $gpu_info_dir/mem_busy_percent)%
+Memory Usage: $(echo $(cat $gpu_info_dir/mem_info_gtt_used)/1000000000 | bc -l)/$(echo $(cat $gpu_info_dir/mem_info_gtt_total)/1000000000 | bc -l)Gi
+Memory Clock: $(grep "\*" $gpu_info_dir/pp_dpm_mclk | awk '{print $2}')
+Shader Clock: $(grep "\*" $gpu_info_dir/pp_dpm_sclk | awk '{print $2}')
+    "
+}
+
 case $BLOCK_BUTTON in
     # Left Click
-    1) notify-send "Info for $(neofetch gpu)" "$(sensors | grep -A8 vddgfx)" ;;
+    1) notify-send -i ~/.local/share/icons/flattrcolor/devices/64/video-display.svg "Temps for $(neofetch gpu)" "$(sensors | grep -A8 vddgfx)" ;;
     # Middle Click
 	2) tmux neww radeontop ;;
     # Right Click
-    3) notify-send "GPU Temps" "$(sensors | grep -A8 vddgfx)" ;;
+    3) gpu_info ;;
     # Scroll Up
     4) ;;
     # Scroll Down
@@ -15,18 +26,20 @@ esac
 
 usage=$(cat /sys/class/drm/card0/device/gpu_busy_percent)
 
+icon=""
+
 if [ "$usage" -ge 90 ] ; then
-    icon="  "
+    usage_icon=""
 elif [ "$usage" -ge 60 ] ; then
-    icon="  "
+    usage_icon=""
 elif [ "$usage" -ge 40 ] ; then
-    icon="  "
+    usage_icon=""
 elif [ "$usage" -ge 10 ] ; then
-    icon="  "
+    usage_icon=""
 else
-    icon="  "
+    usage_icon=""
 fi
 
 command=$(sensors | awk '/^junction/ {print $2}')
 
-echo "$icon  $command"
+echo "$icon  $usage_icon  ${command}°C"

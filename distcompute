@@ -1,0 +1,42 @@
+#!/bin/sh
+
+if systemctl is-enabled boinc-client>/dev/null;then
+    dist_prj=""
+    project_command=boinc-client
+else
+    dist_prj=""
+    project_command=foldingathome
+fi
+
+
+case $BLOCK_BUTTON in
+    # Left Click
+    1) ;;
+    # Middle Click
+	2) sudo systemctl restart $project_command;;
+    # Right Click
+    3) ;;
+    # Scroll Up
+    4) ;;
+    # Scroll Down
+    5) ;;
+esac
+
+#  - telescope
+#  - molecule
+#  - microscope
+#  - pill
+#  - biohazard
+#  - atom
+
+if tail -n1 /opt/fah/log.txt | grep Except >/dev/null;then
+    block_out=""
+elif tail -n1 /opt/fah/log.txt | grep Download >/dev/null;then
+    block_out=""
+elif tail -n1 /opt/fah/log.txt | grep Complete >/dev/null;then
+    block_out="$(tail -n1 /opt/fah/log.txt | awk '{print $7}')"
+else
+    block_out=""
+fi
+
+echo "$dist_prj  $block_out"

@@ -23,4 +23,4 @@ fi
 
 command=$(sensors | awk '/^Tdie/ {print $2}')
 
-echo "$icon  $command"
+echo "$icon  ${command}°C"
