@@ -39,4 +39,4 @@ else
     block_out=""
 fi
 
-echo "$dist_prj  $block_out"
+echo "$dist_prj  $block_out "
