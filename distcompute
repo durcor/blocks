@@ -6,16 +6,18 @@ if systemctl is-enabled boinc-client>/dev/null;then
 else
     dist_prj=""
     project_command=foldingathome
+    status_command(){
+        notify-send "FAH Status" "$(tail /opt/fah/log.txt)"
+    }
 fi
-
 
 case $BLOCK_BUTTON in
     # Left Click
-    1) ;;
+    1) status_command;;
     # Middle Click
 	2) sudo systemctl restart $project_command;;
     # Right Click
-    3) ;;
+    3) sudo systemctl stop $project_command;;
     # Scroll Up
     4) ;;
     # Scroll Down
