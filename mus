@@ -1,6 +1,6 @@
 #!/bin/sh
 
-icon=
+. ~/.cache/wal/colors.sh
 
 case $BLOCK_BUTTON in
     1)
@@ -21,13 +21,33 @@ case $BLOCK_BUTTON in
 esac
 
 if [ "$(playerctl -p mpd status)" = "Playing" ]; then
-  current_media="$(playerctl -p mpd metadata artist) - $(playerctl -p mpd metadata title)"
+    artist="$(playerctl -p mpd metadata artist)"
+    title="$(playerctl -p mpd metadata title)"
 elif [ "$(playerctl -p spotify status)" = "Playing" ]; then
-    current_media="$(playerctl -p spotify metadata artist) - $(playerctl -p spotify metadata title)"
+    artist="$(playerctl -p spotify metadata artist)"
+    title="$(playerctl -p spotify metadata title)"
 elif [ "$(playerctl -p mpv status)" = "Playing" ]; then
-    current_media="$(playerctl -p mpv metadata artist) - $(playerctl -p mpv metadata title)"
+    artist="$(playerctl -p mpv metadata artist)"
+    title="$(playerctl -p mpv metadata title)"
 else
-    current_media="$(playerctl metadata artist) - $(playerctl metadata title)"
+    artist="$(playerctl -p metadata artist)"
+    title="$(playerctl -p metadata title)"
 fi
 
-echo "$icon  $current_media"
+# i3blocks doesn't seem to like ampersands
+if echo "$artist" | grep -q '&';then
+    artist=$(echo "$title" | sed 's/&/and/')
+elif echo "$title" | grep -q '&';then
+    title=$(echo "$title" | sed 's/&/and/')
+fi
+
+if [ -z "$artist" ]; then
+    icon= 
+    printf "%s  <span color='%s'>%s</span>\n" \
+        "$icon" "$color13" "$title"
+else
+    icon=
+    printf "%s  <span color='%s'>%s</span> - <span color='%s'>%s</span>\n" \
+        "$icon" "$color14" "$artist" "$color13" "$title"
+fi
+

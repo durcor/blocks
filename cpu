@@ -5,22 +5,14 @@ case $BLOCK_BUTTON in
 	3) notify-send -i /dev/null "CPU hogs" "$(ps axch -o cmd:15,%cpu --sort=-%cpu | head)" ;;
 esac
 
-threads="$(grep -c "^processor" /proc/cpuinfo)"
+threads="$(nproc)"
 
 usage=$(echo "$(ps aux | awk 'BEGIN {sum=0} {sum+=$3}; END {print sum}')/$threads" | bc)
 
-if [ $usage -ge 90 ] ; then
-    icon="  "
-elif [ $usage -ge 60 ] ; then
-    icon="  "
-elif [ $usage -ge 40 ] ; then
-    icon="  "
-elif [ $usage -ge 10 ] ; then
-    icon="  "
-else
-    icon="  "
-fi
+icon=""
+
+clock=$(echo "$(lscpu | awk '/MHz/ {print $3}')/1000" | bc -ql | cut -c-3)
 
 command=$(sensors | awk '/^Tdie/ {print $2}')
 
-echo "$icon  ${command}°C"
+echo "$icon  $((usage))% ${clock}GHz ${command}"
