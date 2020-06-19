@@ -1,45 +1,59 @@
 #!/bin/sh
 
-gpu_info(){
-    gpu_info_dir=/sys/class/drm/card0/device/
-    notify-send "Info for $(neofetch gpu)" "
-Shader Usage: $(cat $gpu_info_dir/gpu_busy_percent)%
-Memory Usage: $(cat $gpu_info_dir/mem_busy_percent)%
-Memory Usage: $(echo $(cat $gpu_info_dir/mem_info_gtt_used)/1000000000 | bc -l)/$(echo $(cat $gpu_info_dir/mem_info_gtt_total)/1000000000 | bc -l)Gi
-Memory Clock: $(grep "\*" $gpu_info_dir/pp_dpm_mclk | awk '{print $2}')
-Shader Clock: $(grep "\*" $gpu_info_dir/pp_dpm_sclk | awk '{print $2}')
-    "
-}
+gpu_info_dir=/sys/class/drm/card0/device/
+
+sensors | grep amdgpu -A10 > /tmp/amdgpu_sensors_info
 
 case $BLOCK_BUTTON in
     # Left Click
-    1) notify-send -i ~/.local/share/icons/flattrcolor/devices/64/video-display.svg "Temps for $(neofetch gpu)" "$(sensors | grep -A8 vddgfx)" ;;
+    1) 
+    notify-send \
+        -h string:x-canonical-private-synchronous:i3bamdgpu \
+        -i ~/.local/share/icons/flattrcolor/devices/64/video-display.svg \
+        "Temps for $(neofetch gpu | awk '{ $1=""; print}' | xargs)" "$(grep -A8 vddgfx /tmp/amdgpu_sensors_info)"
+    ;;
     # Middle Click
-	2) tmux neww radeontop ;;
+	2) 
+    tmux neww radeontop 
+    ;;
     # Right Click
-    3) gpu_info ;;
+    3)
+    notify-send \
+        -h string:x-canonical-private-synchronous:i3bamdgpu \
+        "Info for $(neofetch gpu)" "
+Shader Usage: $(cat $gpu_info_dir/gpu_busy_percent)%
+Memory Usage: $(cat $gpu_info_dir/mem_busy_percent)%
+VRAM Usage: $(echo "$(cat $gpu_info_dir/mem_info_vram_used)"/1000000000 | bc -l)/$(echo "$(cat $gpu_info_dir/mem_info_vram_total)"/1000000000 | bc -l)Gi
+Memory Clock: $(grep "\*" $gpu_info_dir/pp_dpm_mclk | awk '{print $2}')
+Shader Clock: $(grep "\*" $gpu_info_dir/pp_dpm_sclk | awk '{print $2}')
+    "
+    ;;
     # Scroll Up
     4) ;;
     # Scroll Down
     5) ;;
 esac
 
-usage=$(cat /sys/class/drm/card0/device/gpu_busy_percent)
+usage=$(cat $gpu_info_dir/gpu_busy_percent)
 
 icon=""
 
-if [ "$usage" -ge 90 ] ; then
-    usage_icon=""
-elif [ "$usage" -ge 60 ] ; then
-    usage_icon=""
-elif [ "$usage" -ge 40 ] ; then
-    usage_icon=""
-elif [ "$usage" -ge 10 ] ; then
-    usage_icon=""
-else
-    usage_icon=""
-fi
+# if [ "$usage" -ge 90 ] ; then
+#     usage_icon=""
+# elif [ "$usage" -ge 60 ] ; then
+#     usage_icon=""
+# elif [ "$usage" -ge 40 ] ; then
+#     usage_icon=""
+# elif [ "$usage" -ge 10 ] ; then
+#     usage_icon=""
+# else
+#     usage_icon=""
+# fi
 
-command=$(sensors | awk '/^junction/ {print $2}')
+shader_clock=$(grep "\*" $gpu_info_dir/pp_dpm_sclk | awk '{print $2}')
 
-echo "$icon  $usage_icon  ${command}°C"
+power_usage=$(awk '/power/ {print $2}' /tmp/amdgpu_sensors_info | cut -c-3)
+
+temp=$(awk '/junction/ {print $2}' /tmp/amdgpu_sensors_info | cut -c-3)
+
+echo "$icon  ${usage}% ${shader_clock} ${power_usage}W ${temp}°C"

@@ -26,13 +26,19 @@ Collection of i3blocks blocklets
 * vpn - display VPN connection status
   * Only supports Mullvad at the moment
   * Mostly deprecated as Mullvad has its own tray icon for interacting with the daemon
+* kb - display the currently-active keyboard layout
+  * Made for English + Spanish users
+  * Relies on xkblayout-state
+* accuweather
+  * Use Accuweather's RSS API to get the current weather based on your zip code
 
 ## Other blocks
-* accuweather
 * batplus - sophisticated battery status notifier
-* kb - display the currently-active keyboard layout
 * mem - get information about memory usage
 * net - network statistics
 * darksky - weather block using darksky's api
 * iplocate - get current ip
 * dsk - get information about disk usage
+
+## Possible block ideas
+* Last.fm API module for displaying currently playing song
