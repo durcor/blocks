@@ -14,6 +14,7 @@ elif systemctl --user is-enabled foldingathome>/dev/null; then
     perm_level="systemctl --user"
     status_command(){
         notify-send \
+            -i ~/.local/bin/i3blocks/img/f@h.png \
             -h string:x-canonical-private-synchronous:i3bdistcompute \
             "F@H Status" "$(tail ~/.config/fah/log.txt)"
     }
@@ -30,22 +31,26 @@ case $BLOCK_BUTTON in
 	2) 
     if $perm_level is-active $project_command >/dev/null; then
         notify-send \
+            -i ~/.local/bin/i3blocks/img/f@h.png \
             -h string:x-canonical-private-synchronous:i3bdistcompute \
             "Stopping $project_command"
 
         $perm_level stop $project_command
 
         notify-send \
+            -i ~/.local/bin/i3blocks/img/f@h.png \
             -h string:x-canonical-private-synchronous:i3bdistcompute \
             "$project_command stopped"
     else
         notify-send \
+            -i ~/.local/bin/i3blocks/img/f@h.png \
             -h string:x-canonical-private-synchronous:i3bdistcompute \
             "Starting $project_command"
 
         $perm_level start $project_command
 
         notify-send \
+            -i ~/.local/bin/i3blocks/img/f@h.png \
             -h string:x-canonical-private-synchronous:i3bdistcompute \
             "$project_command started"
     fi

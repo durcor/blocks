@@ -2,6 +2,8 @@
 
 . ~/.cache/wal/colors.sh
 
+icon=
+
 case $BLOCK_BUTTON in
     1)
         playerctl previous
@@ -30,8 +32,8 @@ elif [ "$(playerctl -p mpv status)" = "Playing" ]; then
     artist="$(playerctl -p mpv metadata artist)"
     title="$(playerctl -p mpv metadata title)"
 else
-    artist="$(playerctl -p metadata artist)"
-    title="$(playerctl -p metadata title)"
+    artist="$(playerctl metadata artist)"
+    title="$(playerctl metadata title)"
 fi
 
 # i3blocks doesn't seem to like ampersands
@@ -46,7 +48,6 @@ if [ -z "$artist" ]; then
     printf "%s  <span color='%s'>%s</span>\n" \
         "$icon" "$color13" "$title"
 else
-    icon=
     printf "%s  <span color='%s'>%s</span> - <span color='%s'>%s</span>\n" \
         "$icon" "$color14" "$artist" "$color13" "$title"
 fi

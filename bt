@@ -7,10 +7,10 @@ case $BLOCK_BUTTON in
 	1) bt-select;;
     # middle click
 	2) 
-    if systemctl is-active bluetooth;then
-        sudo systemctl stop bluetooth ; notify-send "Stopping Bluetooth service"
+    if systemctl is-active bluetooth>/dev/null; then
+        sudo systemctl stop bluetooth & notify-send "Stopping Bluetooth service"
     else
-        sudo systemctl restart bluetooth ; notify-send "Starting Bluetooth service"
+        sudo systemctl restart bluetooth & notify-send "Starting Bluetooth service"
     fi
     ;;
     # right click
@@ -26,7 +26,7 @@ if ! systemctl is-active bluetooth>/dev/null;then
     exit
 fi
 
-case $(grep Icon /tmp/btinfo | awk '{print $2}') in
+case $(awk '/Icon/ {print $2}' /tmp/btinfo) in
     "audio-card")
         dev=
         ;;
@@ -38,4 +38,4 @@ case $(grep Icon /tmp/btinfo | awk '{print $2}') in
         ;;
 esac
 
-echo " $dev  $(grep Name /tmp/btinfo | awk '{$1="";sub(" ","")}1')"
+echo " $dev $(awk '/Name/ {$1="" ; print}' /tmp/btinfo)"

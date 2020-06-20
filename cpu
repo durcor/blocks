@@ -1,7 +1,8 @@
 #!/bin/sh
 
 case $BLOCK_BUTTON in
-    1) notify-send "Info for $(neofetch cpu)" "$(sensors | grep -A8 k10)" ;;
+    1) notify-send -i ~/.local/bin/i3blocks/img/cpu.png \
+        "My $(neofetch cpu | awk '{$1="";print}' | xargs)" "$(sensors | grep die -B2 -A6)" ;;
 	3) notify-send -i /dev/null "CPU hogs" "$(ps axch -o cmd:15,%cpu --sort=-%cpu | head)" ;;
 esac
 
@@ -9,7 +10,7 @@ threads="$(nproc)"
 
 usage=$(echo "$(ps aux | awk 'BEGIN {sum=0} {sum+=$3}; END {print sum}')/$threads" | bc)
 
-icon=""
+icon=
 
 clock=$(echo "$(lscpu | awk '/MHz/ {print $3}')/1000" | bc -ql | cut -c-3)
 

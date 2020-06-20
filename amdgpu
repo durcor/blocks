@@ -9,8 +9,8 @@ case $BLOCK_BUTTON in
     1) 
     notify-send \
         -h string:x-canonical-private-synchronous:i3bamdgpu \
-        -i ~/.local/share/icons/flattrcolor/devices/64/video-display.svg \
-        "Temps for $(neofetch gpu | awk '{ $1=""; print}' | xargs)" "$(grep -A8 vddgfx /tmp/amdgpu_sensors_info)"
+        -i ~/.local/bin/i3blocks/img/gpu.png \
+        "My $(neofetch gpu | awk '{ $1=""; print}' | xargs)" "$(grep -A8 vddgfx /tmp/amdgpu_sensors_info)"
     ;;
     # Middle Click
 	2) 
