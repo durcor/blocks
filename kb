@@ -1,4 +1,10 @@
 #!/bin/sh
+# shellcheck disable=1090,2154
+
+. ~/.cache/wal/colors.sh
+
+blockcolor=$color11
+txtcolor=$color8
 
 case $BLOCK_BUTTON in
 	1)
@@ -21,8 +27,16 @@ esac
 current_lang=$(xkblayout-state print %n)
 if [ "$current_lang" = "English" ];then
     icon=" "
+    # icon=US
 else
     icon=" "
+    # icon=ES
 fi
 
-echo "  $icon"
+label=
+
+printf "\
+<span foreground='$blockcolor' background='$color0'></span>\
+<span foreground='$txtcolor' background='$blockcolor'>%s</span>\
+<span foreground='$color0' background='$blockcolor'></span>\n" \
+" $label $icon"

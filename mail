@@ -1,14 +1,24 @@
 #!/bin/sh
+# shellcheck disable=1090,2154
+
+. ~/.cache/wal/colors.sh
+blockcolor=$color11
+txtcolor=$color0
+
 case $BLOCK_BUTTON in
     1) systemctl --user restart mailsync ;;
 	2) tmux selectw -t ;;
     3) systemctl --user restart mailsync ;;
 esac
 
-if cat /tmp/imapsyncicon_$USER >/dev/null ; then
+if cat "/tmp/imapsyncicon_$USER" >/dev/null ; then
     icon=
 else
     icon=
 fi
 
-echo "$icon  $(du -a ~/.local/share/mail/*/INBOX/new/* | sed -n '$=')"
+printf "\
+<span foreground='$blockcolor' background='$color0'></span>\
+<span foreground='$txtcolor' background='$blockcolor'> %s </span>\
+<span foreground='$color0' background='$blockcolor'></span>\n" \
+"$icon $(du -a ~/.local/share/mail/*/INBOX/new/* | sed -n '$=')"

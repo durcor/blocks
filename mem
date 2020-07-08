@@ -1,8 +1,17 @@
 #!/bin/sh
+# shellcheck disable=1090,2154
+
+. ~/.cache/wal/colors.sh
+
+icon=
+
+blockcolor=$color8
+txtcolor=$color15
 
 case $BLOCK_BUTTON in
     1)
         notify-send \
+            -i ~/.local/bin/i3blocks/img/ram.png \
             -h string:x-canonical-private-synchronous:i3bmem \
             "Memory usage" "$(ps axch -o cmd:15,%mem --sort=-%mem | head)"
                     ;;
@@ -10,4 +19,8 @@ case $BLOCK_BUTTON in
 
 command=$(free -h | awk '/Mem/ {print $3 "/" $2}')
 
-echo "  $command"
+printf "\
+<span foreground='$blockcolor' background='$color0'></span>\
+<span foreground='$txtcolor' background='$blockcolor'>%s</span>\
+<span foreground='$color0' background='$blockcolor'></span>\n" \
+" $icon $command "

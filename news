@@ -1,8 +1,17 @@
 #!/bin/sh
+# shellcheck disable=1090,2154
+
+label=
+
+. ~/.cache/wal/colors.sh
+blockcolor=$color9
+txtcolor=$color0
+
+TMUX_NEWS_WINDOW_NAME=" "
 
 case $BLOCK_BUTTON in
     1) 
-        tmux selectw -tnewsboat
+        tmux selectw -t"$TMUX_NEWS_WINDOW_NAME"
         ;;
     2)
         systemctl --user restart nbupdate 
@@ -14,4 +23,22 @@ if [ ! -f ~/.local/share/newsboat/cache.db.lock ]; then
     newsboat -x print-unread | awk '{print $1}' > ~/.local/share/newsboat/unread
 fi
 
-echo "  $(cat ~/.local/share/newsboat/unread) $(cat /tmp/nbupdate 2>/dev/null)"
+if [ -z "$(cat ~/.local/share/newsboat/unread)" ]; then
+    if [ -f /tmp/nbupdate ]; then
+        command=""
+    else
+        command=""
+    fi
+else
+    if [ -f /tmp/nbupdate ]; then
+        command="$(cat ~/.local/share/newsboat/unread)  "
+    else
+        command="$(cat ~/.local/share/newsboat/unread)"
+    fi
+fi
+
+printf "\
+<span foreground='$blockcolor' background='$color0'></span>\
+<span foreground='$txtcolor' background='$blockcolor'> %s </span>\
+<span foreground='$color0' background='$blockcolor'></span>\n" \
+"$label $command"

@@ -1,4 +1,9 @@
 #!/bin/sh
+# shellcheck disable=1090,2154
+
+. ~/.cache/wal/colors.sh
+blockcolor=$color9
+txtcolor=$color0
 
 case $BLOCK_BUTTON in
     # left click
@@ -23,4 +28,15 @@ case $BLOCK_BUTTON in
     ;;
 esac
 
-echo "  $(date '+%H%M/%S %m/%d/%Y') $(cat /tmp/calsync)"
+label=
+
+# if [ -f /tmp/calsync ]; then
+#     echo "  $(date '+%H%M/%S %m/%d/%Y') 🔃"
+# else
+#     echo "  $(date '+%H%M/%S %m/%d/%Y')"
+# fi
+
+printf "\
+<span foreground='$blockcolor' background='$color0'></span>\
+<span foreground='$txtcolor' background='$blockcolor'>%s</span>\n" \
+" $label $(date '+%H%M/%S %m/%d/%Y') "

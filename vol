@@ -1,17 +1,14 @@
 #!/bin/sh
+# shellcheck disable=1090,2154
+
+. ~/.cache/wal/colors.sh
+blockcolor=$color9
+txtcolor=$color0
 
 case $BLOCK_BUTTON in
     # Left Click
 	1) 
-    togglepavu(){
-        if pgrep pavucontrol; then
-            killall -9 pavucontrol
-        else
-            setsid pavucontrol
-        fi
-    }
-
-    togglepavu 
+    kitty --class float -e ncpamixer
     ;;
     # Middle Click
 	2) 
@@ -41,10 +38,16 @@ if [ "$vol" -lt "30" ];then
 	icon="🔈"
 elif [ "$vol" -lt "70" ];then
 	icon="🔉"
-elif [ "$(pamixer --get-mute)" = "true" ];then
-    printf "🔇\\n" && exit
+elif [ "$(pamixer --get-mute)" ];then
+    icon="🔇"
 else
 	icon="🔊"
 fi
 
-printf "%s %s%%\\n" "$icon" "$vol"
+output_device=$(pactl list sinks | grep -A1 "$(pactl info | awk '/Default Sink/{print $3}')" | grep "Description" | tr ' ' '\n' | tail -n1)
+
+printf "\
+<span foreground='$blockcolor' background='$color0'></span>\
+<span foreground='$txtcolor' background='$blockcolor'>%s</span>\
+<span foreground='$color0' background='$blockcolor'></span>\n" \
+" $icon $output_device - $vol% "

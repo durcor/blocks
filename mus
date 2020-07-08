@@ -1,8 +1,9 @@
 #!/bin/sh
+# shellcheck disable=1090,2154
 
-. ~/.cache/wal/colors.sh
-
-icon=
+. "$HOME/.cache/wal/colors.sh"
+blockcolor=$color8
+txtcolor=$color7
 
 case $BLOCK_BUTTON in
     1)
@@ -22,7 +23,9 @@ case $BLOCK_BUTTON in
         ;;
 esac
 
-if [ "$(playerctl -p mpd status)" = "Playing" ]; then
+if ! playerctl metadata >/dev/null; then
+    exit
+elif [ "$(playerctl -p mpd status)" = "Playing" ]; then
     artist="$(playerctl -p mpd metadata artist)"
     title="$(playerctl -p mpd metadata title)"
 elif [ "$(playerctl -p spotify status)" = "Playing" ]; then
@@ -45,10 +48,20 @@ fi
 
 if [ -z "$artist" ]; then
     icon= 
-    printf "%s  <span color='%s'>%s</span>\n" \
-        "$icon" "$color13" "$title"
+    # icon=VID
+    printf "\
+<span foreground='$blockcolor' background='$color0'></span>\
+<span foreground='$txtcolor' background='$blockcolor'> %s </span>\
+<span foreground='$color0' background='$blockcolor'></span>\n" \
+"$icon $title"
 else
-    printf "%s  <span color='%s'>%s</span> - <span color='%s'>%s</span>\n" \
-        "$icon" "$color14" "$artist" "$color13" "$title"
+    icon=
+    # icon=MUS
+    printf "\
+<span foreground='$blockcolor' background='$color0'></span>\
+<span foreground='$color3' background='$blockcolor'> %s </span>\
+<span foreground='$txtcolor' background='$blockcolor'>-</span>\
+<span foreground='$color6' background='$blockcolor'> %s </span>\
+<span foreground='$color0' background='$blockcolor'></span>\n" \
+"$icon $artist" "$title"
 fi
-

@@ -1,8 +1,13 @@
 #!/bin/sh
+# shellcheck disable=1090,2154
 
 gpu_info_dir=/sys/class/drm/card0/device/
 
-sensors | grep amdgpu -A10 > /tmp/amdgpu_sensors_info
+gpuinfo=$(sensors | grep amdgpu -A10)
+
+. ~/.cache/wal/colors.sh
+blockcolor=$color9
+txtcolor=$color0
 
 case $BLOCK_BUTTON in
     # Left Click
@@ -10,7 +15,7 @@ case $BLOCK_BUTTON in
     notify-send \
         -h string:x-canonical-private-synchronous:i3bamdgpu \
         -i ~/.local/bin/i3blocks/img/gpu.png \
-        "My $(neofetch gpu | awk '{ $1=""; print}' | xargs)" "$(grep -A8 vddgfx /tmp/amdgpu_sensors_info)"
+        "Voltages/Temps/Fan RPM/Power Usage for my $(neofetch gpu | awk '{ $1=""; print}' | xargs)" "$(echo "$gpuinfo" | grep -A8 vddgfx)"
     ;;
     # Middle Click
 	2) 
@@ -20,10 +25,10 @@ case $BLOCK_BUTTON in
     3)
     notify-send \
         -h string:x-canonical-private-synchronous:i3bamdgpu \
-        "Info for $(neofetch gpu)" "
-Shader Usage: $(cat $gpu_info_dir/gpu_busy_percent)%
+        -i ~/.local/bin/i3blocks/img/gpu.png \
+        "Clock/VRAM Stats for my$(neofetch gpu | awk '{$1="";print}')" "Shader Usage: $(cat $gpu_info_dir/gpu_busy_percent)%
 Memory Usage: $(cat $gpu_info_dir/mem_busy_percent)%
-VRAM Usage: $(echo "$(cat $gpu_info_dir/mem_info_vram_used)"/1000000000 | bc -l)/$(echo "$(cat $gpu_info_dir/mem_info_vram_total)"/1000000000 | bc -l)Gi
+VRAM Usage: $(echo "$(cat $gpu_info_dir/mem_info_vram_used)"/1000000000 | bc -l | cut -c-3)/$(echo "$(cat $gpu_info_dir/mem_info_vram_total)"/1000000000 | bc -l | cut -c-3)Gi
 Memory Clock: $(grep "\*" $gpu_info_dir/pp_dpm_mclk | awk '{print $2}')
 Shader Clock: $(grep "\*" $gpu_info_dir/pp_dpm_sclk | awk '{print $2}')
     "
@@ -52,8 +57,12 @@ icon=""
 
 shader_clock=$(grep "\*" $gpu_info_dir/pp_dpm_sclk | awk '{print $2}')
 
-power_usage=$(awk '/power/ {print $2}' /tmp/amdgpu_sensors_info | cut -c-3)
+power_usage=$(echo "$gpuinfo" | awk '/power/ {print $2}' | awk -F. '{print $1}')
 
-temp=$(awk '/junction/ {print $2}' /tmp/amdgpu_sensors_info | cut -c-3)
+temp=$(echo "$gpuinfo" | awk '/junction/ {print $2}' | awk -F. '{print $1}')
 
-echo "$icon  ${usage}% ${shader_clock} ${power_usage}W ${temp}°C"
+printf "\
+<span foreground='$blockcolor' background='$color0'></span>\
+<span foreground='$txtcolor' background='$blockcolor'> %s </span>\
+<span foreground='$color0' background='$blockcolor'></span>\n" \
+"$icon ${usage}% ${shader_clock} ${power_usage}W ${temp}°C"

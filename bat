@@ -1,4 +1,5 @@
-#!/usr/bin/env sh
+#!/bin/sh
+# shellcheck disable=1090,2154
 # Give a battery name (e.g. BAT0) as an argument.
 
 case $BLOCK_BUTTON in
@@ -19,7 +20,7 @@ kernelcapacity=$(cat /sys/class/power_supply/BAT0/charge_now)
 kernelalarm=$(cat /sys/class/power_supply/BAT0/alarm)
 status=$(cat /sys/class/power_supply/BAT0/status)
 
-source ~/.cache/wal/colors.sh
+. ~/.cache/wal/colors.sh
 
 color=$color7
 
@@ -54,14 +55,14 @@ fi
 
 case $status in
     Full)
-        statusicon=\=
+        statusicon="="
         ;;
     Charging)
         statusicon=\+
         statuscolor="#00ff00"
         ;;
     Discharging)
-        statusicon=\-
+        statusicon="-"
         statuscolor="#ff0000"
         ;;
     Unknown)

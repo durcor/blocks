@@ -1,4 +1,5 @@
 #!/bin/sh 
+# shellcheck disable=1090,2154
 
 . ~/.cache/wal/colors.sh
 
@@ -8,11 +9,14 @@ METRIC=0
 
 case $BLOCK_BUTTON in
     1)
-        $TERMINAL --class=float --hold -e curl wttr.in
+        notify-send \
+        -h string:x-canonical-private-synchronous:i3baccuweather \
+        "$(curl 'wttr.in?0&T&Q')"
         ;;
     2)
         ;;
     3)
+        $TERMINAL --class=float --hold -e curl wttr.in
         ;;
     4)
         ;;
@@ -21,6 +25,8 @@ case $BLOCK_BUTTON in
 esac
  
 [ -z "$1" ] && echo "zipcode required!" && exit 1
+
+ping -c 1 1.1.1.1 >/dev/null || exit
 
 curl -s http://rss.accuweather.com/rss/liveweather_rss.asp\?metric\=$METRIC\&locCode\="$1" | grep "Currently:" | sed 's/\(<title>\|<\/title>\)//g' | awk '{$1="";print}' > /tmp/weather
 
@@ -118,5 +124,6 @@ case $current_weather in
         ;;
 esac
 
-printf "<span color='%s'>%s</span>  <span color='%s'>%s</span>\n" \
-    "$color9" "$icon" "$color5" "$temperature"
+printf "\
+<span foreground='$color9' background='$color0'></span>\
+<span background='$color9' foreground='$color0'> $icon $temperature </span>\n"

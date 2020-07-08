@@ -1,4 +1,9 @@
 #!/bin/sh
+# shellcheck disable=1090,2154
+
+. ~/.cache/wal/colors.sh
+blockcolor=$color11
+txtcolor=$color8
 
 # Common distributed computing binaries:
 # - boinc-client
@@ -101,4 +106,8 @@ else
     fi
 fi
 
-echo "$dist_prj  $block_out "
+printf "\
+<span foreground='$blockcolor' background='$color0'></span>\
+<span foreground='$txtcolor' background='$blockcolor'> %s</span>\
+<span foreground='$color0' background='$blockcolor'></span>\n" \
+"$dist_prj $block_out "
