@@ -1,0 +1,83 @@
+#!/bin/sh
+# shellcheck disable=1090,2154
+
+STONK_LIST="$HOME/.config/i3blocks/mscr"
+. ~/.cache/wal/colors.sh
+
+label=
+blockcolor=$color10
+txtcolor=$color8
+
+current_ticker=$(head -1 "$STONK_LIST")
+
+case $BLOCK_BUTTON in
+    1) # Left Click
+        $TERMINAL --class float --hold -e stonks "$current_ticker"
+        ;;
+    2) # Middle Click
+        $TERMINAL --class float -e nvim "$STONK_LIST"
+        ;;
+    3) # Right Click
+        notify-send "STOCKS BEING WATCHED" "$(cat "$STONK_LIST")"
+        ;;
+    4) # Scroll Up
+        other_tickers=$(tail -n +2 "$STONK_LIST")
+        echo "$other_tickers" > "$STONK_LIST"
+        echo "$current_ticker" >> "$STONK_LIST"
+        current_ticker=$(head -1 "$STONK_LIST")
+        ;;
+    5) # Scroll Down
+        next_ticker=$(tail -1 "$STONK_LIST")
+        other_tickers=$(head -n -1 "$STONK_LIST")
+        echo "$next_ticker" > "$STONK_LIST"
+        echo "$other_tickers" >> "$STONK_LIST"
+        current_ticker=$next_ticker
+        ;;
+esac
+
+if command -v stonks >/dev/null; then
+    stonk_info=$(
+        stonks "$current_ticker" |
+        sed -n 2p |
+        tr '|' '\n' |
+        tr '(' '\n' |
+        tr ')' '\n' |
+        sed 's/┃//'
+    )
+
+    stonk_name=$(
+        echo "$stonk_info" |
+        sed -n 1p |
+        awk '{$1="";print}'
+    )
+
+    stonk_price=$(
+        echo "$stonk_info" |
+        sed -n 2p |
+        awk -Fm '{print $2}'
+    )
+
+    stonk_delta_percentage=$(
+        echo "$stonk_info" |
+        sed -n 3p | xargs
+    )
+
+    # stonk_delta_absolute=$(echo "$stonk_info" | sed -n 4p)
+else
+    # curl --no-progress-meter "https://stonks.icu/$ticker" |
+    true
+fi
+
+if echo "$stonk_delta_percentage" | grep -q '-'; then
+    stonk_price_color="#ff0000"
+else
+    stonk_price_color="#00ff00"
+fi
+
+printf "\
+<b><span foreground='$blockcolor' background='$color0'></span>\
+<span foreground='$txtcolor' background='$blockcolor'> %s</span>\
+<span foreground='$stonk_price_color' background='$blockcolor'>%s</span>\
+<span foreground='$txtcolor' background='$blockcolor'>%s</span>\
+<span foreground='$color0' background='$blockcolor'></span></b>\n" \
+"$label$stonk_name $stonk_price(" "$stonk_delta_percentage" ")"
