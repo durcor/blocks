@@ -1,81 +1,60 @@
 #!/bin/sh
 # shellcheck disable=1090,2154
 
-. ~/.cache/wal/colors.sh
-blockcolor=$color11
+. "${XDG_CACHE_HOME-$HOME/.cache}/wal/colors.sh"
+blockcolor=$color12
 txtcolor=$color8
+
+fah_log="${XDG_CONFIG_HOME-$HOME/.config}/fah/log.txt"
 
 # Common distributed computing binaries:
 # - boinc-client
 # - foldingathome
 
-if systemctl is-enabled boinc-client>/dev/null; then
-    dist_prj=""
-    perm_level="sudo systemctl"
-    project_command=boinc-client
-elif systemctl --user is-enabled foldingathome>/dev/null; then
-    dist_prj=""
-    project_command=foldingathome
-    perm_level="systemctl --user"
-    status_command(){
-        notify-send \
-            -i ~/.local/bin/i3blocks/img/f@h.png \
-            -h string:x-canonical-private-synchronous:i3bdistcompute \
-            "F@H Status" "$(tail ~/.config/fah/log.txt)"
-    }
+if systemctl is-enabled boinc-client >/dev/null; then
+	dist_prj=""
+	perm_level="sudo systemctl"
+	project_command=boinc-client
+elif systemctl --user is-enabled foldingathome >/dev/null; then
+	dist_prj=""
+	block_notify="notify-send -i ~/.local/bin/i3blocks/img/f@h.png -h string:x-canonical-private-synchronous:i3bdistcompute"
+	project_command=foldingathome
+	perm_level="systemctl --user"
+	status_command(){
+		$block_notify "F@H Status" "$(tail ~/.config/fah/log.txt)"
+	}
 else
-    exit
+	exit
 fi
 
 case $BLOCK_BUTTON in
-    # Left Click
-    1) 
-    status_command
-    ;;
-    # Middle Click
-	2) 
-    if $perm_level is-active $project_command >/dev/null; then
-        notify-send \
-            -i ~/.local/bin/i3blocks/img/f@h.png \
-            -h string:x-canonical-private-synchronous:i3bdistcompute \
-            "Stopping $project_command"
-
-        $perm_level stop $project_command
-
-        notify-send \
-            -i ~/.local/bin/i3blocks/img/f@h.png \
-            -h string:x-canonical-private-synchronous:i3bdistcompute \
-            "$project_command stopped"
-    else
-        notify-send \
-            -i ~/.local/bin/i3blocks/img/f@h.png \
-            -h string:x-canonical-private-synchronous:i3bdistcompute \
-            "Starting $project_command"
-
-        $perm_level start $project_command
-
-        notify-send \
-            -i ~/.local/bin/i3blocks/img/f@h.png \
-            -h string:x-canonical-private-synchronous:i3bdistcompute \
-            "$project_command started"
-    fi
-    ;;
-    # Right Click
-    3) 
-    xdg-open http://localhost:7396
-    ;;
-    # Scroll Up
-    4);;
-    # Scroll Down
-    5);;
-    # Rear Side Button
-    8)
-    xdg-open http://localhost:7396
-    ;;
-    # Front Side Button
-    9)
-    xdg-open http://localhost:7396
-    ;;
+	1) # Left Click
+		status_command
+		;;
+	2) # Middle Click
+		if $perm_level is-active $project_command >/dev/null; then
+			$block_notify "Stopping $project_command"
+			$perm_level stop $project_command
+			$block_notify "$project_command stopped"
+		else
+			$block_notify "Starting $project_command"
+			$perm_level start $project_command
+			$block_notify "$project_command started"
+		fi
+		;;
+	3) # Right Click
+		xdg-open http://localhost:7396
+		;;
+	4) # Scroll Up
+		;;
+	5) # Scroll Down
+		;;
+	8) # Rear Side Button
+		xdg-open http://localhost:7396
+		;;
+	9) # Front Side Button
+		xdg-open http://localhost:7396
+		;;
 esac
 
 #  - telescope
@@ -86,28 +65,31 @@ esac
 #  - atom
 
 if [ "$project_command" = "boinc-client" ]; then
-    return
+	return
 else
-    # TODO: Use switch case
-    if tail -n1 ~/.config/fah/log.txt | grep 'Except\|exit' >/dev/null;then
+	current_fah_status=$(tail -1 "$fah_log")
+	# TODO Use switch case
+	if echo "$current_fah_status" | grep -q 'Except\|exit'; then
         block_out=""
-    elif tail -n1 ~/.config/fah/log.txt | grep 'Complete' >/dev/null;then
-        block_out="$(tail -n1 ~/.config/fah/log.txt | awk '{print $7}')"
-    elif tail -n1 ~/.config/fah/log.txt | grep 'Temperature\|Web' >/dev/null;then
-        block_out="$(tail -n20 ~/.config/fah/log.txt | grep 'Complete' | tail -n1 | awk '{print $7}')"
-    elif tail -n1 ~/.config/fah/log.txt | grep 'checkpoint' >/dev/null;then
+	elif echo "$current_fah_status" | grep -q 'Complete'; then
+        block_out="$(tail -1 "$fah_log" | awk '{print $7}')"
+		get_steps_per_second
+	elif echo "$current_fah_status" | grep -q 'Temperature\|Web'; then
+        block_out="$(tail -20 "$fah_log" | grep 'Complete' | tail -1 | awk '{print $7}')"
+		get_steps_per_second
+	elif echo "$current_fah_status" | grep -q 'checkpoint'; then
         block_out=""
-    elif tail -n1 ~/.config/fah/log.txt | grep 'Download' >/dev/null;then
+	elif echo "$current_fah_status" | grep -q 'Download'; then
         block_out=""
-    elif tail -n1 ~/.config/fah/log.txt | grep 'Upload' >/dev/null;then
+	elif echo "$current_fah_status" | grep 'Upload'; then
         block_out=""
-    else
+	else
         block_out=""
-    fi
+	fi
 fi
 
 printf "\
-<span foreground='$blockcolor' background='$color0'></span>\
+<b><span foreground='$blockcolor' background='$color0'></span>\
 <span foreground='$txtcolor' background='$blockcolor'> %s</span>\
-<span foreground='$color0' background='$blockcolor'></span>\n" \
+<span foreground='$color0' background='$blockcolor'></span></b>\n" \
 "$dist_prj $block_out "
