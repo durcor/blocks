@@ -64,6 +64,20 @@ esac
 #  - biohazard
 #  - atom
 
+get_steps_per_second(){
+	cur_step=$(tail "$fah_log" | grep -v "Web" | grep -v "WARNING" | tail -1)
+	cur_step_count=$(echo "$cur_step" | awk '{print $2}')
+	cur_step_seconds=$(echo "$cur_step" | awk '{print $1}' | awk -F':' '{print $1*60*60 + $2*60 + $3}')
+
+	prev_step=$(tail "$fah_log" | grep -v "Web" | grep -v "WARNING" | tail -2 | head -1)
+	prev_step_count=$(echo "$prev_step" | awk '{print $2}')
+	prev_step_seconds=$(echo "$prev_step" | awk '{print $1}' | awk -F':' '{print $1*60*60 + $2*60 + $3}')
+
+	steps_per_second=$(echo "($cur_step_count - $prev_step_count)/($cur_step_seconds - $prev_step_seconds)" | bc)
+
+	block_out="$block_out $steps_per_second steps/s"
+}
+
 if [ "$project_command" = "boinc-client" ]; then
 	return
 else
