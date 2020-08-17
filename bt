@@ -8,52 +8,55 @@ txtcolor=$color8
 btinfo=$(bluetoothctl info)
 
 case $BLOCK_BUTTON in
-    # left click
-	1) 
+    1) # Left Click
         bt-select
-            ;;
-    # middle click
-	2) 
-        if systemctl is-active bluetooth>/dev/null; then
+        ;;
+    2) # Middle Click
+        if systemctl is-active bluetooth >/dev/null; then
             sudo systemctl stop bluetooth & notify-send "Stopping Bluetooth service"
         else
             sudo systemctl restart bluetooth & notify-send "Starting Bluetooth service"
         fi
-            ;;
-    # right click
-    3) 
+        ;;
+    3) # Right Click
         notify-send "Bluetooth Info" "$btinfo"
-            ;;
-    # scroll up
-	4) ;;
-    # scroll down
-	5) ;;
+        ;;
+    4) # Scroll Up
+        ;;
+    5) # Scroll Down
+        ;;
 esac
 
-if ! systemctl is-active bluetooth>/dev/null;then
+if ! systemctl is-active bluetooth >/dev/null; then
     echo " x"
     exit
 fi
 
-case $(echo "$btinfo" | awk '/Icon/ {print $2}') in
-    "audio-card")
-        dev=
-        ;;
-    "input-gaming")
-        dev=
-        ;;
-    *)
-        dev=X
-        ;;
-esac
+if ! bluetoothctl info >/dev/null; then
+    dev="${dev}X"
+else
+    for device in $(echo "$btinfo" | awk '/Device/ {print $2}'); do
+        case $(bluetoothctl info "$device" | awk '/Icon/ {print $2}') in
+            "audio-card")
+                dev="${dev}"
+                ;;
+            "input-gaming")
+                dev="${dev}"
+                ;;
+            *)
+                dev="${dev}X"
+                ;;
+        esac
+        dev="$dev ($(~/src/Bluetooth_Headset_Battery_Level/bluetooth_battery.py "$device" | tr ' ' '\n' | tail -1))"
+    done
+fi
 
-number_of_devs=$(bluetoothctl info | grep -c Device)
+number_of_devs=$(echo "$btinfo" | grep -c Device)
 
 icon=
 
 printf "\
-<span foreground='$blockcolor' background='$color0'></span>\
-<span foreground='$txtcolor' background='$blockcolor'>%s</span>\
-<span foreground='$color0' background='$blockcolor'></span>\n" \
-" $icon $number_of_devs:$dev "
-# echo " $dev $(echo "$btinfo" | awk '/Name/ {$1="" ; print}')"
+<b><span foreground='$blockcolor' background='$color0'></span>\
+<span foreground='$txtcolor' background='$blockcolor'> %s </span>\
+<span foreground='$color0' background='$blockcolor'></span></b>\n" \
+"$icon $number_of_devs:$dev"
