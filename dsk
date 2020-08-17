@@ -10,25 +10,25 @@ blockcolor=$color13
 txtcolor=$color0
 
 case $BLOCK_BUTTON in
-	1) 
+    1) # Left Click
         notify-send \
             -h string:x-canonical-private-synchronous:i3bdsk \
-            "💽 Disk space" "$(df -hT -x tmpfs -x squashfs -x devtmpfs)" 
+            "💽 Disk space" "$(df -hT -x tmpfs -x squashfs -x devtmpfs)"
         ;;
-    3) 
+    3) # Right Click
         notify-send \
             -h string:x-canonical-private-synchronous:i3bdsk \
             "Scanning $HOME..."
         notify-send \
             -h string:x-canonical-private-synchronous:i3bdsk \
-            "💽 Home folder disk usage by folder" "$(sudo du -hs $HOME/* | sort -h)" 
+            "💽 Home folder disk usage by folder" "$(sudo du -hs $HOME/* | sort -h)"
         ;;
 esac
 
 command=$(df -h "$drive" | awk ' /[0-9]/ {print $3 "/" $2}')
 
 printf "\
-<span foreground='$blockcolor' background='$color0'></span>\
+<b><span foreground='$blockcolor' background='$color0'></span>\
 <span foreground='$txtcolor' background='$blockcolor'>%s</span>\
-<span foreground='$color0' background='$blockcolor'></span>\n" \
+<span foreground='$color0' background='$blockcolor'></span></b>\n" \
 " $icon $command "
