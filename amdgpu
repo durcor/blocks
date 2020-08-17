@@ -9,6 +9,32 @@ gpuinfo=$(sensors | grep amdgpu -A10)
 blockcolor=$color9
 txtcolor=$color0
 
+# GPUs aren't usually hot-swapped unless it's a thunderbolt eGPU system,
+# so just check the GPU's identity once per boot
+[ -f /tmp/i3bgpu ] || {
+    if command -v glxinfo >/dev/null; then
+        glxinfo -B | awk -F':' '/OpenGL renderer string/ {print $2}' |
+        xargs | tr ' ' '\n' | head -1 > /tmp/i3bgpu
+    else
+        lspci | awk -F':' '/VGA/ {print $3}' | xargs |
+        tr ' ' '\n' | head -1 | sed 's|Advanced|AMD|' > /tmp/i3bgpu
+    fi
+}
+
+case $(cat /tmp/i3bgpu) in
+    "AMD")
+        monitor_program="radeontop -c"
+        lm_sensors_name="amdgpu"
+        ;;
+    "Intel")
+        ;;
+    "NVIDIA")
+        ;;
+esac
+
+gpu_info_dir=/sys/class/drm/card0/device/
+gpuinfo=$(sensors | grep $lm_sensors_name -A10)
+
 case $BLOCK_BUTTON in
     # Left Click
     1) 
