@@ -1,38 +1,67 @@
-#!/bin/sh 
+#!/bin/sh
 # shellcheck disable=1090,2154
 
-. ~/.cache/wal/colors.sh
+LOCATION_LIST="${XDG_CONFIG_HOME:-$HOME/.config}/i3blocks/accuweather"
+. "${XDG_CACHE_HOME:-$HOME/.cache}/wal/colors.sh"
+
+blockcolor=$color6
+txtcolor=$color0
+
+current_location=$(head -1 "$LOCATION_LIST")
 
 # 0:F
 # 1:C
 METRIC=0
 
 case $BLOCK_BUTTON in
-    1)
+    1) # Left Click
         notify-send \
-        -h string:x-canonical-private-synchronous:i3baccuweather \
-        "$(curl 'wttr.in?0&T&Q')"
+            -h string:x-canonical-private-synchronous:i3baccuweather \
+            "$(curl "wttr.in/$current_location?0&T&Q")"
         ;;
-    2)
+    2) # Middle Click
         ;;
-    3)
-        $TERMINAL --class=float --hold -e curl wttr.in
+    3) # Right Click
+        $TERMINAL --class=float -d 125 41 --hold -e curl "wttr.in/$current_location"
         ;;
-    4)
+    4) # Scroll Up
+        moved_location=$(head -1 "$LOCATION_LIST")
+        other_locations=$(tail -n +2 "$LOCATION_LIST")
+        echo "$other_locations" > "$LOCATION_LIST"
+        echo "$moved_location" >> "$LOCATION_LIST"
         ;;
-    5)
+    5) # Scroll Down
+        next_location=$(tail -1 "$LOCATION_LIST")
+        other_locations=$(head -n -1 "$LOCATION_LIST")
+        echo "$next_location" > "$LOCATION_LIST"
+        echo "$other_locations" >> "$LOCATION_LIST"
         ;;
 esac
- 
-[ -z "$1" ] && echo "zipcode required!" && exit 1
 
-ping -c 1 1.1.1.1 >/dev/null || exit
+current_location=$(head -1 "$LOCATION_LIST")
 
-curl -s http://rss.accuweather.com/rss/liveweather_rss.asp\?metric\=$METRIC\&locCode\="$1" | grep "Currently:" | sed 's/\(<title>\|<\/title>\)//g' | awk '{$1="";print}' > /tmp/weather
+ping -c 1 1.1.1.1 >/dev/null || {
+    icon="X" && exit 1
+}
 
-current_weather=$(awk -F':' '{print $1}' /tmp/weather | xargs)
+curl -s "http://rss.accuweather.com/rss/liveweather_rss.asp?metric=$METRIC&locCode=$current_location" |
+    grep "Currently" > /tmp/weather
 
-temperature=$(awk -F':' '{print $2}' /tmp/weather | xargs | sed 's/F/°F/')
+current_location_name=$(
+    awk -F':' '/in/{print $1}' /tmp/weather |
+    awk -F'in' '{print $2}'  | xargs
+)
+
+current_weather=$(
+    grep Currently: /tmp/weather |
+    awk -F':' '{print $2}' | xargs
+)
+
+temperature=$(
+    grep Currently: /tmp/weather |
+    awk -F':' '{print $3}' | xargs |
+    sed 's/F/°F/' | sed 's|</title>||'
+)
 
 case $current_weather in
     "Sunny")
@@ -125,5 +154,7 @@ case $current_weather in
 esac
 
 printf "\
-<span foreground='$color9' background='$color0'></span>\
-<span background='$color9' foreground='$color0'> $icon $temperature </span>\n"
+<b><span foreground='$blockcolor' background='$color0'></span>\
+<span foreground='$txtcolor' background='$blockcolor'> %s</span>\
+<span foreground='$color0' background='$blockcolor'></span></b>\n" \
+"$icon $temperature $current_location_name "
