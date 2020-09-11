@@ -5,11 +5,11 @@
 
 icon=
 
-blockcolor=$color8
-txtcolor=$color15
+blockcolor=$color11
+txtcolor=$color0
 
 case $BLOCK_BUTTON in
-    1)
+    1) # Left Click
         notify-send \
             -i ~/.local/bin/i3blocks/img/ram.png \
             -h string:x-canonical-private-synchronous:i3bmem \
@@ -20,7 +20,7 @@ case $BLOCK_BUTTON in
 command=$(free -h | awk '/Mem/ {print $3 "/" $2}')
 
 printf "\
-<span foreground='$blockcolor' background='$color0'></span>\
+<b><span foreground='$blockcolor' background='$color0'></span>\
 <span foreground='$txtcolor' background='$blockcolor'>%s</span>\
-<span foreground='$color0' background='$blockcolor'></span>\n" \
+<span foreground='$color0' background='$blockcolor'></span></b>\n" \
 " $icon $command "

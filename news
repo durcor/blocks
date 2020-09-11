@@ -7,21 +7,19 @@ label=
 blockcolor=$color9
 txtcolor=$color0
 
-TMUX_NEWS_WINDOW_NAME=" "
-
 case $BLOCK_BUTTON in
-    1) 
-        tmux selectw -t"$TMUX_NEWS_WINDOW_NAME"
+    1) # Left Click
+        $TERMINAL --class float -e newsboat
         ;;
-    2)
-        systemctl --user restart nbupdate 
+    2) # Middle Click
+        systemctl --user restart nbupdate
         ;;
-    3);;
+    3) # Right Click
+        ;;
 esac
 
-if [ ! -f ~/.local/share/newsboat/cache.db.lock ]; then
+[ ! -f ~/.local/share/newsboat/cache.db.lock ] &&
     newsboat -x print-unread | awk '{print $1}' > ~/.local/share/newsboat/unread
-fi
 
 if [ -z "$(cat ~/.local/share/newsboat/unread)" ]; then
     if [ -f /tmp/nbupdate ]; then
@@ -31,14 +29,14 @@ if [ -z "$(cat ~/.local/share/newsboat/unread)" ]; then
     fi
 else
     if [ -f /tmp/nbupdate ]; then
-        command="$(cat ~/.local/share/newsboat/unread)  "
+        command="$(cat ~/.local/share/newsboat/unread) "
     else
         command="$(cat ~/.local/share/newsboat/unread)"
     fi
 fi
 
 printf "\
-<span foreground='$blockcolor' background='$color0'></span>\
+<b><span foreground='$blockcolor' background='$color0'></span>\
 <span foreground='$txtcolor' background='$blockcolor'> %s </span>\
-<span foreground='$color0' background='$blockcolor'></span>\n" \
+<span foreground='$color0' background='$blockcolor'></span></b>\n" \
 "$label $command"

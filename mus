@@ -5,39 +5,42 @@
 blockcolor=$color8
 txtcolor=$color7
 
-case $BLOCK_BUTTON in
-    1)
-        playerctl previous
-        ;;
-    2)
-        playerctl play-pause
-        ;;
-    3)
-        playerctl next
-        ;;
-    4)
-        playerctl position 5+
-        ;;
-    5)
-        playerctl position 5-
-        ;;
-esac
-
 if ! playerctl metadata >/dev/null; then
     exit
 elif [ "$(playerctl -p mpd status)" = "Playing" ]; then
     artist="$(playerctl -p mpd metadata artist)"
     title="$(playerctl -p mpd metadata title)"
+    current_player="mpd"
 elif [ "$(playerctl -p spotify status)" = "Playing" ]; then
     artist="$(playerctl -p spotify metadata artist)"
     title="$(playerctl -p spotify metadata title)"
+    current_player="spotify"
 elif [ "$(playerctl -p mpv status)" = "Playing" ]; then
     artist="$(playerctl -p mpv metadata artist)"
     title="$(playerctl -p mpv metadata title)"
+    current_player="mpv"
 else
     artist="$(playerctl metadata artist)"
     title="$(playerctl metadata title)"
 fi
+
+case $BLOCK_BUTTON in
+    1) # Left Click
+        playerctl -p $current_player previous
+        ;;
+    2) # Middle Click
+        playerctl -p $current_player play-pause
+        ;;
+    3) # Right Click
+        playerctl -p $current_player next
+        ;;
+    4) # Scroll Up
+        playerctl -p $current_player position 5+
+        ;;
+    5) # Scroll Down
+        playerctl -p $current_player position 5-
+        ;;
+esac
 
 # i3blocks doesn't seem to like ampersands
 if echo "$artist" | grep -q '&';then
@@ -47,8 +50,7 @@ elif echo "$title" | grep -q '&';then
 fi
 
 if [ -z "$artist" ]; then
-    icon= 
-    # icon=VID
+    icon=
     printf "\
 <span foreground='$blockcolor' background='$color0'></span>\
 <span foreground='$txtcolor' background='$blockcolor'> %s </span>\
@@ -56,12 +58,11 @@ if [ -z "$artist" ]; then
 "$icon $title"
 else
     icon=
-    # icon=MUS
     printf "\
-<span foreground='$blockcolor' background='$color0'></span>\
+<b><span foreground='$blockcolor' background='$color0'></span>\
 <span foreground='$color3' background='$blockcolor'> %s </span>\
 <span foreground='$txtcolor' background='$blockcolor'>-</span>\
 <span foreground='$color6' background='$blockcolor'> %s </span>\
-<span foreground='$color0' background='$blockcolor'></span>\n" \
+<span foreground='$color0' background='$blockcolor'></span></b>\n" \
 "$icon $artist" "$title"
 fi

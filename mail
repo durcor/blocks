@@ -6,19 +6,25 @@ blockcolor=$color11
 txtcolor=$color0
 
 case $BLOCK_BUTTON in
-    1) systemctl --user restart mailsync ;;
-	2) tmux selectw -t ;;
-    3) systemctl --user restart mailsync ;;
+    1) # Left Click
+        $TERMINAL --class float -e neomutt
+        ;;
+    2) # Middle Click
+        systemctl --user restart mailsync
+        ;;
+    3) # Right Click
+        systemctl --user restart mailsync 
+        ;;
 esac
 
-if cat "/tmp/imapsyncicon_$USER" >/dev/null ; then
+if [ -f "/tmp/imapsyncicon_$USER" ]; then
     icon=
 else
     icon=
 fi
 
 printf "\
-<span foreground='$blockcolor' background='$color0'></span>\
+<b><span foreground='$blockcolor' background='$color0'></span>\
 <span foreground='$txtcolor' background='$blockcolor'> %s </span>\
-<span foreground='$color0' background='$blockcolor'></span>\n" \
-"$icon $(du -a ~/.local/share/mail/*/INBOX/new/* | sed -n '$=')"
+<span foreground='$color0' background='$blockcolor'></span></b>\n" \
+"$icon $(find ~/.local/share/mail/*/INBOX/new/* | wc -l)"

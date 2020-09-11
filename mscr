@@ -1,18 +1,26 @@
 #!/bin/sh
-# shellcheck disable=1090,2154
+# shellcheck disable=1090,2154,2086
 
-STONK_LIST="$HOME/.config/i3blocks/mscr"
-. ~/.cache/wal/colors.sh
+# FIXME stonks seems to encounter a bug once in a while where it will not exit correctly and loop forever
+
+STONK_LIST="${XDG_CONFIG_HOME-$HOME/.config}/i3blocks/mscr"
+. "${XDG_CACHE_HOME-$HOME/.cache}/wal/colors.sh"
 
 label=
-blockcolor=$color10
+blockcolor=$color7
 txtcolor=$color8
 
-current_ticker=$(head -1 "$STONK_LIST")
+ping -c 1 archlinux.org >/dev/null || exit 1
+
+if command -v stonks >/dev/null; then
+    stonk_getter(){ stonks "$(head -1 "$STONK_LIST")" ;}
+else
+    stonk_getter(){ curl --no-progress-meter "https://stonks.icu/$(head -1 "$STONK_LIST")" ;}
+fi
 
 case $BLOCK_BUTTON in
     1) # Left Click
-        $TERMINAL --class float --hold -e stonks "$current_ticker"
+        $TERMINAL --class float --hold -e stonk_getter
         ;;
     2) # Middle Click
         $TERMINAL --class float -e nvim "$STONK_LIST"
@@ -20,58 +28,62 @@ case $BLOCK_BUTTON in
     3) # Right Click
         notify-send "STOCKS BEING WATCHED" "$(cat "$STONK_LIST")"
         ;;
+    # Navigate through the user-defined stocks by scrolling
     4) # Scroll Up
+        moved_ticker=$(head -1 "$STONK_LIST")
         other_tickers=$(tail -n +2 "$STONK_LIST")
         echo "$other_tickers" > "$STONK_LIST"
-        echo "$current_ticker" >> "$STONK_LIST"
-        current_ticker=$(head -1 "$STONK_LIST")
+        echo "$moved_ticker" >> "$STONK_LIST"
         ;;
     5) # Scroll Down
         next_ticker=$(tail -1 "$STONK_LIST")
         other_tickers=$(head -n -1 "$STONK_LIST")
         echo "$next_ticker" > "$STONK_LIST"
         echo "$other_tickers" >> "$STONK_LIST"
-        current_ticker=$next_ticker
         ;;
 esac
 
+current_ticker=$(head -1 "$STONK_LIST")
+
 if command -v stonks >/dev/null; then
-    stonk_info=$(
-        stonks "$current_ticker" |
-        sed -n 2p |
-        tr '|' '\n' |
-        tr '(' '\n' |
-        tr ')' '\n' |
-        sed 's/┃//'
-    )
-
-    stonk_name=$(
-        echo "$stonk_info" |
-        sed -n 1p |
-        awk '{$1="";print}'
-    )
-
-    stonk_price=$(
-        echo "$stonk_info" |
-        sed -n 2p |
-        awk -Fm '{print $2}'
-    )
-
-    stonk_delta_percentage=$(
-        echo "$stonk_info" |
-        sed -n 3p | xargs
-    )
-
-    # stonk_delta_absolute=$(echo "$stonk_info" | sed -n 4p)
+    stonk_getter(){ stonks $current_ticker ;}
 else
-    # curl --no-progress-meter "https://stonks.icu/$ticker" |
-    true
+    stonk_getter(){ curl --no-progress-meter https://stonks.icu/$current_ticker ;}
 fi
 
+stonk_info=$(
+    stonk_getter |
+    sed -n 2p |
+    tr '|' '\n' |
+    tr '(' '\n' |
+    tr ')' '\n' |
+    sed 's/┃//'
+)
+
+stonk_name=$(
+    echo "$stonk_info" |
+    sed -n 1p |
+    awk '{$1="";print}'
+)
+
+stonk_price=$(
+    echo "$stonk_info" |
+    sed -n 2p |
+    awk -Fm '{print $2}'
+)
+
+stonk_delta_percentage=$(
+    echo "$stonk_info" |
+    sed -n 3p | xargs
+)
+
+# stonk_delta_absolute=$(echo "$stonk_info" | sed -n 4p)
+
 if echo "$stonk_delta_percentage" | grep -q '-'; then
-    stonk_price_color="#ff0000"
+    stonk_price_color="$color9"
 else
-    stonk_price_color="#00ff00"
+    stonk_price_color="$color10"
+    stonk_delta_percentage="+$stonk_delta_percentage"
 fi
 
 printf "\

@@ -1,53 +1,55 @@
 #!/bin/sh
 # shellcheck disable=1090,2154
 
-. ~/.cache/wal/colors.sh
-blockcolor=$color9
+. "${XDG_CACHE_HOME-$HOME/.cache}/wal/colors.sh"
+blockcolor=$color1
 txtcolor=$color0
 
 case $BLOCK_BUTTON in
-    # Left Click
-	1) 
-    kitty --class float -e ncpamixer
-    ;;
-    # Middle Click
-	2) 
-    pamixer --toggle-mute 
-    ;;
-    # Right Click
-	3) 
-    killall -9 pavucontrol 
-    ;;
-    # Scroll Up
-	4) 
-    pamixer -i 5 
-    ;;
-    # Scroll Down
-	5) 
-    pamixer -d 5 
-    ;;
-    # Backward Button
-    8) ;;
-    # Forward Button
-    9) ;;
+    1) # Left Click
+        alacritty --class float -e ncpamixer
+        ;;
+    2) # Middle Click
+        pamixer --toggle-mute
+        ;;
+    3) # Right Click
+        pulseaudio -k
+        ;;
+    4) # Scroll Up
+        pamixer -i 5
+        ;;
+    5) # Scroll Down
+        pamixer -d 5
+        ;;
+    8) # Backward Button
+        ;;
+    9) # Forward Button
+        ;;
 esac
 
 vol=$(pamixer --get-volume)
 
-if [ "$vol" -lt "30" ];then
-	icon="🔈"
-elif [ "$vol" -lt "70" ];then
-	icon="🔉"
-elif [ "$(pamixer --get-mute)" ];then
-    icon="🔇"
+if pamixer --get-mute >/dev/null; then
+    icon=""
+elif [ "$vol" -lt 30 ]; then
+    icon=""
+elif [ "$vol" -lt 70 ]; then
+    icon=""
 else
-	icon="🔊"
+    icon=""
 fi
 
-output_device=$(pactl list sinks | grep -A1 "$(pactl info | awk '/Default Sink/{print $3}')" | grep "Description" | tr ' ' '\n' | tail -n1)
+output_device=$(
+	pactl list sinks |
+	grep -A1 "$(
+		pactl info |
+		awk '/Default Sink/{print $3}'
+	)" |
+	grep "Description" | tr ' ' '\n' | tail -n1
+)
 
 printf "\
-<span foreground='$blockcolor' background='$color0'></span>\
-<span foreground='$txtcolor' background='$blockcolor'>%s</span>\
-<span foreground='$color0' background='$blockcolor'></span>\n" \
-" $icon $output_device - $vol% "
+<b><span foreground='$blockcolor' background='$color0'></span>\
+<span foreground='$txtcolor' background='$blockcolor'> %s </span>\
+<span foreground='$color0' background='$blockcolor'></span></b>\n" \
+"$icon $output_device - $vol%"

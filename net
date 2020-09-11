@@ -1,12 +1,12 @@
-#!/usr/bin/env sh
+#!/bin/sh
 
 case $BLOCK_BUTTON in
-	1) 
-        tmux neww sudo wifi-menu 
+	1) # Left Click
+        $TERMINAL --class float -e nmtui
         ;;
-    2) 
+    2) # Middle Click
         ;;
-	3)
+	3) # Right Click
         ;;
 esac
 

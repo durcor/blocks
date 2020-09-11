@@ -1,23 +1,69 @@
 #!/bin/sh
+# shellcheck disable=1090,2154
+
+. "${XDG_CACHE_HOME-$HOME/.cache}/wal/colors.sh"
+
+blockcolor=$color7
+txtcolor=$color8
+
+mullvad_notify="notify-send -i ~/.local/bin/i3blocks/img/mullvad.png -h string:x-canonical-private-synchronous:i3bvpn"
 
 case $BLOCK_BUTTON in
-    1) 
-        sudo systemctl restart mullvad-daemon
+    1) # Left Click
+        if mullvad status | grep -q Disconnected; then
+            $mullvad_notify "Connecting to mullvad"
+            mullvad connect
+            while mullvad status | grep -q 'Connecting\|Disconn'; do
+                sleep 1
+            done
+            $mullvad_notify "$(mullvad status)"
+            $mullvad_notify "$(mullvad status -l)"
+        else
+            $mullvad_notify "Disconnecting from mullvad"
+            mullvad disconnect
+            while mullvad status | grep -q Disconnecting; do
+                sleep 1
+            done
+            sleep 1
+            $mullvad_notify "$(mullvad status -l)"
+        fi
         ;;
-    2) 
-        sudo systemctl restart mullvad-daemon
+    2) # Middle Click
+        if systemctl is-active mullvad-daemon; then
+            $mullvad_notify "Stopping Mullvad Daemon"
+            sudo systemctl stop mullvad-daemon
+        else
+            $mullvad_notify "Starting Mullvad Daemon"
+            sudo systemctl start mullvad-daemon
+        fi
         ;;
-	3) 
-        sudo systemctl restart mullvad-daemon
+    3) # Right Click
+        $TERMINAL --class float -e fzfmullvad
+        ;;
+    4|5) # Scroll Up/Down
+        $mullvad_notify "$(mullvad status)"
+        $mullvad_notify "$(mullvad status -l)"
         ;;
 esac
 
-if [ "$(curl -s am.i.mullvad.net/connected | awk '{print $3}')" = not ]
-then
-    echo 'no mole'
-elif [ "$(curl -s am.i.mullvad.net/connected | awk '{print $3}')" = connected ]
-then
-    echo mole
+if mullvad_status=$(mullvad status -l); then
+    if echo "$mullvad_status" | grep -q Connected; then
+        status=
+        location=$(echo "$mullvad_status" | awk '/Relay/{print $2}')
+        location_color="$color10"
+    else
+        status=
+        location="UNSECURED"
+        location_color="$color9"
+    fi
 else
-    echo X
+    status=X
+    location="ERROR"
 fi
+
+printf "\
+<b><span foreground='$blockcolor' background='$color0'></span>\
+<span foreground='$txtcolor' background='$blockcolor'>%s</span>\
+<span foreground='$location_color' background='$blockcolor'>%s</span>\
+<span foreground='$color0' background='$blockcolor'></span></b>\n" \
+" $status" " $location "

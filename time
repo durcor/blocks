@@ -2,41 +2,34 @@
 # shellcheck disable=1090,2154
 
 . ~/.cache/wal/colors.sh
-blockcolor=$color9
+blockcolor=$color14
 txtcolor=$color0
 
 case $BLOCK_BUTTON in
-    # left click
-	1) 
-    tmux selectw -tneomutt & 
-    ;;
-    # middle click
-	2) 
-    systemctl --user restart vdirsyncer 
-    ;;
-    # scroll up
-	4) 
-    notify-send "Upcoming Events" "$(khal list --format '{calendar} {start-time} {title}' today tomorrow)" 
-    ;;
-    # scroll down
-	5) 
-    notify-send "Upcoming Events" "$(khal list --format '{calendar} {start-time} {title}' today tomorrow)" 
-    ;;
-    # right click
-	3) 
-    notify-send "Upcoming Events" "$(khal list --format '{calendar} {start-time} {title}' today tomorrow)" 
-    ;;
+    1) # Left Click
+        notify-send "It is currently $(date +%X) on $(date +%A), $(date +%B%d), $(date +%Y)"
+        ;;
+    2) # Middle Click
+        systemctl --user restart vdirsyncer
+        ;;
+    3) # Right Click
+        notify-send "Upcoming Events" "$(khal list --format '{calendar} {start-time} {title}' today tomorrow)"
+        ;;
+    4) # Scroll Up
+        notify-send "Upcoming Events" "$(khal list --format '{calendar} {start-time} {title}' today tomorrow)"
+        ;;
+    5) # Scroll Down
+        notify-send "Upcoming Events" "$(khal list --format '{calendar} {start-time} {title}' today tomorrow)"
+        ;;
 esac
 
-label=
-
-# if [ -f /tmp/calsync ]; then
-#     echo "  $(date '+%H%M/%S %m/%d/%Y') 🔃"
-# else
-#     echo "  $(date '+%H%M/%S %m/%d/%Y')"
-# fi
+if [ -f /tmp/calsync ]; then
+    label=""
+else
+    label=""
+fi
 
 printf "\
-<span foreground='$blockcolor' background='$color0'></span>\
-<span foreground='$txtcolor' background='$blockcolor'>%s</span>\n" \
+<b><span foreground='$blockcolor' background='$color0'></span>\
+<span foreground='$txtcolor' background='$blockcolor'>%s</span></b>\n" \
 " $label $(date '+%H%M/%S %m/%d/%Y') "
