@@ -1,8 +1,6 @@
 #!/bin/sh
 # shellcheck disable=1090,2154,2086
 
-# FIXME stonks seems to encounter a bug once in a while where it will not exit correctly and loop forever
-
 STONK_LIST="${XDG_CONFIG_HOME-$HOME/.config}/i3blocks/mscr"
 . "${XDG_CACHE_HOME-$HOME/.cache}/wal/colors.sh"
 
@@ -10,17 +8,19 @@ label=
 blockcolor=$color7
 txtcolor=$color8
 
-ping -c 1 archlinux.org >/dev/null || exit 1
+ping -c 1 stonks.icu >/dev/null || exit 1
 
-if command -v stonks >/dev/null; then
-    stonk_getter(){ stonks "$(head -1 "$STONK_LIST")" ;}
-else
-    stonk_getter(){ curl --no-progress-meter "https://stonks.icu/$(head -1 "$STONK_LIST")" ;}
-fi
+# FIXME: stonks seems to encounter a bug once in a while where it will not
+# exit correctly and loop forever
+# if command -v stonks >/dev/null; then
+    stonk_getter="stonks $(head -1 "$STONK_LIST")"
+# else
+#    stonk_getter="curl --no-progress-meter "https://stonks.icu/$(head -1 "$STONK_LIST")""
+# fi
 
 case $BLOCK_BUTTON in
     1) # Left Click
-        $TERMINAL --class float --hold -e stonk_getter
+        $TERMINAL --class float --hold -e $stonk_getter
         ;;
     2) # Middle Click
         $TERMINAL --class float -e nvim "$STONK_LIST"
@@ -45,37 +45,20 @@ esac
 
 current_ticker=$(head -1 "$STONK_LIST")
 
-if command -v stonks >/dev/null; then
+# if command -v stonks >/dev/null; then
     stonk_getter(){ stonks $current_ticker ;}
-else
-    stonk_getter(){ curl --no-progress-meter https://stonks.icu/$current_ticker ;}
-fi
+# else
+    # stonk_getter(){ curl --no-progress-meter https://stonks.icu/$current_ticker ;}
+# fi
 
-stonk_info=$(
-    stonk_getter |
-    sed -n 2p |
-    tr '|' '\n' |
-    tr '(' '\n' |
-    tr ')' '\n' |
-    sed 's/┃//'
-)
+stonk_info=$(stonk_getter | sed -n 2p | tr '|' '\n' | tr '(' '\n' |
+    tr ')' '\n' | sed 's/┃//')
 
-stonk_name=$(
-    echo "$stonk_info" |
-    sed -n 1p |
-    awk '{$1="";print}'
-)
+stonk_name=$(echo "$stonk_info" | sed -n 1p | awk '{$1="";print}')
 
-stonk_price=$(
-    echo "$stonk_info" |
-    sed -n 2p |
-    awk -Fm '{print $2}'
-)
+stonk_price=$(echo "$stonk_info" | sed -n 2p | awk -Fm '{print $2}')
 
-stonk_delta_percentage=$(
-    echo "$stonk_info" |
-    sed -n 3p | xargs
-)
+stonk_delta_percentage=$(echo "$stonk_info" | sed -n 3p | xargs)
 
 # stonk_delta_absolute=$(echo "$stonk_info" | sed -n 4p)
 
@@ -86,10 +69,11 @@ else
     stonk_delta_percentage="+$stonk_delta_percentage"
 fi
 
-printf "\
-<b><span foreground='$blockcolor' background='$color0'></span>\
-<span foreground='$txtcolor' background='$blockcolor'> %s</span>\
-<span foreground='$stonk_price_color' background='$blockcolor'>%s</span>\
-<span foreground='$txtcolor' background='$blockcolor'>%s</span>\
-<span foreground='$color0' background='$blockcolor'></span></b>\n" \
-"$label$stonk_name $stonk_price(" "$stonk_delta_percentage" ")"
+printf "<b><span foreground='%s' background='%s'></span>" $blockcolor $color0
+printf "<span foreground='%s' background='%s'> %s(</span>" \
+	$txtcolor $blockcolor "$label$stonk_name $stonk_price"
+printf "<span foreground='%s' background='%s'>%s</span>" \
+	$stonk_price_color $blockcolor $stonk_delta_percentage
+printf "<span foreground='%s' background='%s'>)</span>" $txtcolor $blockcolor
+printf "<span foreground='%s' background='%s'></span></b>\n" \
+	$color0 $blockcolor

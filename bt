@@ -1,11 +1,25 @@
 #!/bin/sh
 # shellcheck disable=1090,2154
 
-. ~/.cache/wal/colors.sh
+. "${XDG_CACHE_HOME-$HOME/.cache}/wal/colors.sh"
 blockcolor=$color11
 txtcolor=$color8
 
-btinfo=$(bluetoothctl info)
+connected_devices=$(
+    for dev in $(bluetoothctl devices | awk '{print $2}'); do
+        bluetoothctl info "$dev"
+    done | grep -B8 "Connected: yes" | awk '/Device/{print $2}')
+
+btinfo=$(for dev in $connected_devices; do bluetoothctl info "$dev"; done)
+
+if [ -d "/usr/share/icons/HighContrast" ]; then
+    notif_icon="/usr/share/icons/HighContrast/256x256/status/bluetooth-active.png"
+elif [ -d "/usr/share/icons/Adwaita" ]; then
+    notif_icon="/usr/share/icons/Adwaita/96x96/devices/bluetooth-symbolic.symbolic.png"
+else
+    # TODO: curl a default bluetooth icon.
+    true
+fi
 
 case $BLOCK_BUTTON in
     1) # Left Click
@@ -13,13 +27,15 @@ case $BLOCK_BUTTON in
         ;;
     2) # Middle Click
         if systemctl is-active bluetooth >/dev/null; then
-            sudo systemctl stop bluetooth & notify-send "Stopping Bluetooth service"
+            sudo systemctl stop bluetooth &
+                notify-send -i $notif_icon "Stopping Bluetooth service"
         else
-            sudo systemctl restart bluetooth & notify-send "Starting Bluetooth service"
+            sudo systemctl restart bluetooth &
+                notify-send -i $notif_icon "Starting Bluetooth service"
         fi
         ;;
     3) # Right Click
-        notify-send "Bluetooth Info" "$btinfo"
+        notify-send -i $notif_icon "Bluetooth Info" "$btinfo"
         ;;
     4) # Scroll Up
         ;;
@@ -27,31 +43,29 @@ case $BLOCK_BUTTON in
         ;;
 esac
 
-if ! systemctl is-active bluetooth >/dev/null; then
-    echo " x"
-    exit
-fi
+! systemctl is-active bluetooth >/dev/null && { echo " x" ; exit 1 ;}
 
 if ! bluetoothctl info >/dev/null; then
-    dev="${dev}X"
+    out="${out}X"
 else
-    for device in $(echo "$btinfo" | awk '/Device/ {print $2}'); do
-        case $(bluetoothctl info "$device" | awk '/Icon/ {print $2}') in
+    for device in $connected_devices; do
+        case "$(bluetoothctl info "$device" | awk '/Icon/ {print $2}')" in
             "audio-card")
-                dev="${dev}"
+                out="${out}"
                 ;;
             "input-gaming")
-                dev="${dev}"
+                out="${out}"
                 ;;
             *)
-                dev="${dev}X"
+                out="${out}X"
                 ;;
         esac
-        dev="$dev ($(~/src/Bluetooth_Headset_Battery_Level/bluetooth_battery.py "$device" | tr ' ' '\n' | tail -1))"
+		battery_level=$(btbat "$device" | tr ' ' '\n' | tail -1)
+		echo "$battery_level" | grep -q '%' && out="$out ($battery_level) "
     done
 fi
 
-number_of_devs=$(echo "$btinfo" | grep -c Device)
+out=$(echo "$out" | sed 's/ $//')
 
 icon=
 
@@ -59,4 +73,4 @@ printf "\
 <b><span foreground='$blockcolor' background='$color0'></span>\
 <span foreground='$txtcolor' background='$blockcolor'> %s </span>\
 <span foreground='$color0' background='$blockcolor'></span></b>\n" \
-"$icon $number_of_devs:$dev"
+"$icon $out"

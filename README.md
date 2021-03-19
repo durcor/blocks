@@ -17,7 +17,8 @@ Makes heavy use of Powerline symbols for defining block boundaries.
   * Integrated with [khal](https://github.com/pimutils/khal)
 * [cpu](cpu) - display CPU usage and temperature
 * [vol](vol) - control volume and observe current volume
-* [news](news) - get information about unread news articles and if news is currently being synced or not
+* [mscr](mscr) - track the current value and daily percentage of stocks
+* [news](news) - get information about unread news articles and if news is currently being updated or not
   * Integrated with Newsboat
 * [mail](mail) - check unread mail and mail sync status
   * Integrated with Neomutt and Luke Smith's [mutt-wizard](https://github.com/LukeSmithxyz/mutt-wizard)

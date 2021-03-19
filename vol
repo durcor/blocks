@@ -7,13 +7,13 @@ txtcolor=$color0
 
 case $BLOCK_BUTTON in
     1) # Left Click
-        alacritty --class float -e ncpamixer
+        $TERMINAL --class float -e ncpamixer
         ;;
     2) # Middle Click
         pamixer --toggle-mute
         ;;
     3) # Right Click
-        pulseaudio -k
+        systemctl --user restart pipewire pipewire-pulse pipewire-media-session
         ;;
     4) # Scroll Up
         pamixer -i 5
@@ -44,12 +44,12 @@ output_device=$(
 	grep -A1 "$(
 		pactl info |
 		awk '/Default Sink/{print $3}'
-	)" |
-	grep "Description" | tr ' ' '\n' | tail -n1
+	)" | grep "Description" | tr ' ' '\n' | tail -n1
 )
 
-printf "\
-<b><span foreground='$blockcolor' background='$color0'></span>\
-<span foreground='$txtcolor' background='$blockcolor'> %s </span>\
-<span foreground='$color0' background='$blockcolor'></span></b>\n" \
-"$icon $output_device - $vol%"
+printf "<b><span foreground='%s' background='%s'></span>" \
+	"$blockcolor" "$color0"
+printf "<span foreground='%s' background='%s'> %s </span>" \
+	"$txtcolor" "$blockcolor" "$icon $output_device - $vol%"
+printf "<span foreground='%s' background='%s'></span></b>\n" \
+	"$color0" "$blockcolor"

@@ -1,68 +1,62 @@
 #!/bin/sh
-# shellcheck disable=1090,2154
+# shellcheck disable=1090,2154,2086
 
-. "$HOME/.cache/wal/colors.sh"
+. "${XDG_CACHE_HOME-$HOME/.cache}/wal/colors.sh"
 blockcolor=$color8
 txtcolor=$color7
 
-if ! playerctl metadata >/dev/null; then
-    exit
-elif [ "$(playerctl -p mpd status)" = "Playing" ]; then
-    artist="$(playerctl -p mpd metadata artist)"
-    title="$(playerctl -p mpd metadata title)"
-    current_player="mpd"
-elif [ "$(playerctl -p spotify status)" = "Playing" ]; then
-    artist="$(playerctl -p spotify metadata artist)"
-    title="$(playerctl -p spotify metadata title)"
-    current_player="spotify"
-elif [ "$(playerctl -p mpv status)" = "Playing" ]; then
-    artist="$(playerctl -p mpv metadata artist)"
-    title="$(playerctl -p mpv metadata title)"
-    current_player="mpv"
-else
+! playerctl metadata >/dev/null && exit
+
+for player in mpd spotify mpv; do
+    [ "$(playerctl -p $player status)" = "Playing" ] && {
+        artist="$(playerctl -p $player metadata artist)"
+        title="$(playerctl -p $player metadata title)"
+        current_player="-p $player "
+	}
+done 2>/dev/null
+# Silence any errors if a player can't be found.
+
+[ "$current_player" ] || {
     artist="$(playerctl metadata artist)"
     title="$(playerctl metadata title)"
-fi
+    current_player=""
+}
 
 case $BLOCK_BUTTON in
     1) # Left Click
-        playerctl -p $current_player previous
+        playerctl ${current_player}previous
         ;;
     2) # Middle Click
-        playerctl -p $current_player play-pause
+        playerctl ${current_player}play-pause
         ;;
     3) # Right Click
-        playerctl -p $current_player next
+        playerctl ${current_player}next
         ;;
     4) # Scroll Up
-        playerctl -p $current_player position 5+
+        playerctl ${current_player}position 5+
         ;;
     5) # Scroll Down
-        playerctl -p $current_player position 5-
+        playerctl ${current_player}position 5-
         ;;
 esac
 
 # i3blocks doesn't seem to like ampersands
-if echo "$artist" | grep -q '&';then
-    artist=$(echo "$title" | sed 's/&/and/')
-elif echo "$title" | grep -q '&';then
-    title=$(echo "$title" | sed 's/&/and/')
-fi
+echo "$artist" | grep -q '&' && artist=$(echo "$artist" | sed 's/&/and/')
+echo "$title" | grep -q '&' && title=$(echo "$title" | sed 's/&/and/')
 
+# If no artist is found in the metadata, the current media is not a song
+# or it is only generic media
+printf "<b><span foreground='%s' background='%s'></span>" $blockcolor $color0
 if [ -z "$artist" ]; then
-    icon=
-    printf "\
-<span foreground='$blockcolor' background='$color0'></span>\
-<span foreground='$txtcolor' background='$blockcolor'> %s </span>\
-<span foreground='$color0' background='$blockcolor'></span>\n" \
-"$icon $title"
+	printf "<span foreground='%s' background='%s'>  %s </span>" \
+		$txtcolor $blockcolor "$title"
 else
-    icon=
-    printf "\
-<b><span foreground='$blockcolor' background='$color0'></span>\
-<span foreground='$color3' background='$blockcolor'> %s </span>\
-<span foreground='$txtcolor' background='$blockcolor'>-</span>\
-<span foreground='$color6' background='$blockcolor'> %s </span>\
-<span foreground='$color0' background='$blockcolor'></span></b>\n" \
-"$icon $artist" "$title"
+	printf "<span foreground='%s' background='%s'>  %s </span>" \
+		$color3 $blockcolor "$artist"
+	printf "<span foreground='%s' background='%s'>-</span>" \
+		$txtcolor $blockcolor
+	printf "<span foreground='%s' background='%s'> %s </span>" \
+		$color6 $blockcolor "$title"
 fi
+printf "<span foreground='%s' background='%s'></span></b>\n" \
+	$color0 $blockcolor

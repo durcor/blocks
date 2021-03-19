@@ -1,7 +1,7 @@
 #!/bin/sh
-# shellcheck disable=1090,2154,2086
+# shellcheck disable=1090,2154
 
-. ${XDG_CACHE_HOME:-$HOME/.cache}/wal/colors.sh
+. "${XDG_CACHE_HOME-$HOME/.cache}/wal/colors.sh"
 blockcolor=$color9
 txtcolor=$color0
 
@@ -9,13 +9,12 @@ txtcolor=$color0
 # so just check the GPU's identity once per boot
 [ -f /tmp/i3bgpu ] || {
     if command -v glxinfo >/dev/null; then
-        glxinfo -B | awk -F':' '/OpenGL renderer string/ {print $2}' |
-        xargs | tr ' ' '\n' | head -1 > /tmp/i3bgpu
+        glxinfo -B | awk -F':' '/OpenGL renderer string/ {print $2}' | xargs |
+            tr ' ' '\n' | head -1 > /tmp/i3bgpu
     else
-        lspci | awk -F':' '/VGA/ {print $3}' | xargs |
-        tr ' ' '\n' | head -1 | sed 's|Advanced|AMD|' > /tmp/i3bgpu
-    fi
-}
+        lspci | awk -F':' '/VGA/ {print $3}' | xargs | tr ' ' '\n' | head -1 |
+            sed 's|Advanced|AMD|' > /tmp/i3bgpu
+    fi ;}
 
 case $(cat /tmp/i3bgpu) in
     "AMD")
@@ -41,7 +40,7 @@ case $BLOCK_BUTTON in
             )" "$(echo "$gpuinfo" | grep -A8 vddgfx)"
         ;;
     2) # Middle Click
-        $TERMINAL --class float -e $monitor_program
+        $TERMINAL --class float -e "$monitor_program"
         ;;
     3) # Right Click
         notify-send \
@@ -76,22 +75,12 @@ icon=""
 #     usage_icon=""
 # fi
 
-shader_clock=$(
-    grep "\*" $gpu_info_dir/pp_dpm_sclk |
-    awk '{print $2}'
-)
+shader_clock=$(grep "\*" $gpu_info_dir/pp_dpm_sclk | awk '{print $2}')
 
-power_usage=$(
-    echo "$gpuinfo" |
-    awk '/power/ {print $2}' |
-    awk -F. '{print $1}'
-)
+power_usage=$(echo "$gpuinfo" | awk '/power/ {print $2}' |
+    awk -F. '{print $1}')
 
-temp=$(
-    echo "$gpuinfo" |
-    awk '/junction/ {print $2}' |
-    awk -F. '{print $1}'
-)
+temp=$(echo "$gpuinfo" | awk '/junction/ {print $2}' | awk -F. '{print $1}' | sed 's/+//')
 
 printf "\
 <b><span foreground='$blockcolor' background='$color0'></span>\

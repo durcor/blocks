@@ -10,6 +10,11 @@ fah_log="${XDG_CONFIG_HOME-$HOME/.config}/fah/log.txt"
 # Common distributed computing binaries:
 # - boinc-client
 # - foldingathome
+#
+# TODO: account for:
+# - cryptocurrency miners
+# - compute stuff? (ROCm, CUDA)
+# 	- rely on rocm-smi, nvidia-smi
 
 if systemctl is-enabled boinc-client >/dev/null; then
 	dist_prj=""
@@ -64,7 +69,8 @@ esac
 #  - biohazard
 #  - atom
 
-get_steps_per_second(){
+get_steps_per_second()
+{
 	cur_step=$(tail "$fah_log" | grep -v "Web" | grep -v "WARNING" | tail -1)
 	cur_step_count=$(echo "$cur_step" | awk '{print $2}')
 	cur_step_seconds=$(echo "$cur_step" | awk '{print $1}' | awk -F':' '{print $1*60*60 + $2*60 + $3}')
@@ -83,22 +89,33 @@ if [ "$project_command" = "boinc-client" ]; then
 else
 	current_fah_status=$(tail -1 "$fah_log")
 	# TODO Use switch case
+	# case "$current_fah_status" in
+	# 	*"Except"*|*"exit"*)
+	# 		block_out=""
+	# 		;;
+	# 	*"Complete"*)
+	# 		block_out="$(tail -1 "$fah_log" | awk '{print $7}')"
+	# 		get_steps_per_second
+	# 		;;
+	# 	etc)....
+	# esac
+
 	if echo "$current_fah_status" | grep -q 'Except\|exit'; then
-        block_out=""
+		block_out=""
 	elif echo "$current_fah_status" | grep -q 'Complete'; then
-        block_out="$(tail -1 "$fah_log" | awk '{print $7}')"
+		block_out="$(tail -1 "$fah_log" | awk '{print $7}')"
 		get_steps_per_second
 	elif echo "$current_fah_status" | grep -q 'Temperature\|Web'; then
-        block_out="$(tail -20 "$fah_log" | grep 'Complete' | tail -1 | awk '{print $7}')"
+		block_out="$(tail -20 "$fah_log" | grep 'Complete' | tail -1 | awk '{print $7}')"
 		get_steps_per_second
 	elif echo "$current_fah_status" | grep -q 'checkpoint'; then
-        block_out=""
+		block_out=""
 	elif echo "$current_fah_status" | grep -q 'Download'; then
-        block_out=""
+		block_out=""
 	elif echo "$current_fah_status" | grep 'Upload'; then
-        block_out=""
+		block_out=""
 	else
-        block_out=""
+		block_out=""
 	fi
 fi
 
