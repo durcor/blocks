@@ -66,6 +66,8 @@ else
                 out="${out}X"
                 ;;
         esac
+		# TODO: Only display battery level if present.
+		# - grep ps for bluetoothd -E
 		battery_level=$(echo "$current_device_info" | grep 'Percentage' | cut -d ' ' -f4)
 		# Account for bug when Battery level doesn't show up when HFP/HSP
 		# devices are missing.
