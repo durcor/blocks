@@ -1,12 +1,9 @@
 #!/bin/sh
 # shellcheck disable=1090,2154
-# Give a battery name (e.g. BAT0) as an argument.
+# Give a battery name (e.g. BAT0) as an optional argument.
+# TODO: Add support for multiple batteries.
 
-if [ "$1" ]; then
-	bat_dev=$1
-else
-	bat_dev="BAT0"
-fi
+[ "$1" ] && bat_dev=$1 || bat_dev="BAT0"
 
 [ -d /sys/class/power_supply/$bat_dev ] || exit 1
 
@@ -26,15 +23,15 @@ esac
 #   no battery/dead
 
 # capacity=$(echo scale=4\;$(cat /sys/class/power_supply/BAT0/charge_now)/$(cat /sys/class/power_supply/BAT0/charge_full)\*100 | bc | sed 's/0\{1,\}$//') || exit
-capacity=$(cat /sys/class/power_supply/$bat_dev/capacity)
-kernelcapacity=$(cat /sys/class/power_supply/$bat_dev/charge_now)
-kernelalarm=$(cat /sys/class/power_supply/$bat_dev/alarm)
-status=$(cat /sys/class/power_supply/$bat_dev/status)
+# kernelcapacity=$(cat /sys/class/power_supply/$bat_dev/charge_now)
+# kernelalarm=$(cat /sys/class/power_supply/$bat_dev/alarm)
 
 . ~/.cache/wal/colors.sh
 
-color=$color7
+blockcolor=$color2
+txtcolor=$color8
 
+capacity=$(cat /sys/class/power_supply/$bat_dev/capacity)
 if [ "$capacity" -ge 90 ]; then
     color=$color7
     icon=" "
@@ -52,14 +49,11 @@ else
     icon=" "
 fi
 
-if [ "$kernelcapacity" -ge "$kernelalarm" ]; then
-    alarm=""
-else
-    alarm="❗"
-fi
+[ "$(cat /sys/class/power_supply/$bat_dev/charge_now)" -ge \
+	"$(cat /sys/class/power_supply/$bat_dev/alarm)" ] &&
+    alarm="" || alarm="❗"
 
-
-case $status in
+case "$(cat /sys/class/power_supply/$bat_dev/status)" in
     Full)
         statusicon="="
         ;;
@@ -80,4 +74,11 @@ case $status in
 esac
 
 # printf "<span color='%s'>%s</span><span color='%s'>%s</span>\n" "$color" "$alarm$capacity%" "$statuscolor" "$statusicon $icon"
-printf "<span color='%s'>%s</span>\n" "$color" "$alarm$capacity%$statusicon $icon"
+printf "<b><span foreground='%s' background='%s'></span>" \
+	"$blockcolor" "$color0"
+printf "<span foreground='%s' background='%s'> %s</span>" \
+	"$color" "$blockcolor" "${alarm}${icon}${capacity}%"
+printf "<span foreground='%s' background='%s'>%s </span>" \
+	"$statuscolor" "$blockcolor" "${statusicon}"
+printf "<span foreground='%s' background='%s'></span></b>\n" \
+	"$color0" "$blockcolor"
