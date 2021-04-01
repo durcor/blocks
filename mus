@@ -1,11 +1,11 @@
 #!/bin/sh
 # shellcheck disable=1090,2154,2086
 
+playerctl metadata >/dev/null || exit
+
 . "${XDG_CACHE_HOME-$HOME/.cache}/wal/colors.sh"
 blockcolor=$color8
 txtcolor=$color7
-
-! playerctl metadata >/dev/null && exit
 
 for player in mpd spotify mpv; do
     [ "$(playerctl -p $player status)" = "Playing" ] && {
@@ -41,8 +41,8 @@ case $BLOCK_BUTTON in
 esac
 
 # i3blocks doesn't seem to like ampersands
-echo "$artist" | grep -q '&' && artist=$(echo "$artist" | sed 's/&/and/')
-echo "$title" | grep -q '&' && title=$(echo "$title" | sed 's/&/and/')
+echo "$artist" | grep -q '&' && artist=$(echo "$artist" | sed 's/&/and/g')
+echo "$title" | grep -q '&' && title=$(echo "$title" | sed 's/&/and/g')
 
 # If no artist is found in the metadata, the current media is not a song
 # or it is only generic media

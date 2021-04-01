@@ -5,6 +5,17 @@
 blockcolor=$color9
 txtcolor=$color0
 
+print_block()
+{
+	input=$1
+	printf "<b><span foreground='%s' background='%s'></span>" \
+		"$blockcolor" "$color0"
+	printf "<span foreground='%s' background='%s'> %s </span>" \
+		"$txtcolor" "$blockcolor" "$input"
+	printf "<span foreground='%s' background='%s'></span></b>\n" \
+		"$color0" "$blockcolor"
+}
+
 # GPUs aren't usually hot-swapped unless it's a thunderbolt eGPU system,
 # so just check the GPU's identity once per boot
 [ -f /tmp/i3bgpu ] || {
@@ -16,7 +27,7 @@ txtcolor=$color0
             sed 's|Advanced|AMD|' > /tmp/i3bgpu
     fi ;}
 
-case $(cat /tmp/i3bgpu) in
+case "$(cat /tmp/i3bgpu)" in
     "AMD")
         monitor_program="radeontop -c"
         lm_sensors_name="amdgpu"
@@ -28,17 +39,19 @@ case $(cat /tmp/i3bgpu) in
 esac
 
 gpu_info_dir=/sys/class/drm/card0/device/
-gpuinfo=$(sensors | grep $lm_sensors_name -A10)
+
+shader_clock=$(echo $(cat $gpu_info_dir/hwmon/hwmon1/freq1_input)/1000000 | bc)
 
 case $BLOCK_BUTTON in
     1) # Left Click
-    notify-send \
-        -h string:x-canonical-private-synchronous:i3bamdgpu \
-        -i ~/.local/bin/i3blocks/img/gpu.png \
-        "Voltages/Temps/Fan RPM/Power Usage for my$(
-            glxinfo -B | awk -F':' '/OpenGL renderer string/{print $2}' | awk -F'(' '{print $1}'
-            )" "$(echo "$gpuinfo" | grep -A8 vddgfx)"
-        ;;
+		gpuinfo=$(sensors | grep $lm_sensors_name -A10)
+		notify-send \
+			-h string:x-canonical-private-synchronous:i3bamdgpu \
+			-i ~/.local/bin/i3blocks/img/gpu.png \
+			"Voltages/Temps/Fan RPM/Power Usage for my$(
+				glxinfo -B | awk -F':' '/OpenGL renderer string/{print $2}' | awk -F'(' '{print $1}'
+				)" "$(echo "$gpuinfo" | grep -A8 vddgfx)"
+				;;
     2) # Middle Click
         $TERMINAL --class float -e "$monitor_program"
         ;;
@@ -51,7 +64,7 @@ case $BLOCK_BUTTON in
 Memory Usage: $(cat $gpu_info_dir/mem_busy_percent)%
 VRAM Usage: $(echo "$(cat $gpu_info_dir/mem_info_vram_used)"/1000000000 | bc -l | cut -c-3)/$(echo "$(cat $gpu_info_dir/mem_info_vram_total)"/1000000000 | bc -l | cut -c-3)Gi
 Memory Clock: $(grep "\*" $gpu_info_dir/pp_dpm_mclk | awk '{print $2}')
-Shader Clock: $(grep "\*" $gpu_info_dir/pp_dpm_sclk | awk '{print $2}')"
+Shader Clock: $shader_clock"
         ;;
     4) # Scroll Up
         ;;
@@ -75,15 +88,7 @@ icon=""
 #     usage_icon=""
 # fi
 
-shader_clock=$(grep "\*" $gpu_info_dir/pp_dpm_sclk | awk '{print $2}')
+power_usage=$(($(cat $gpu_info_dir/hwmon/hwmon1/power1_average)/1000000))
+temp=$(($(cat $gpu_info_dir/hwmon/hwmon1/temp2_input)/1000))
 
-power_usage=$(echo "$gpuinfo" | awk '/power/ {print $2}' |
-    awk -F. '{print $1}')
-
-temp=$(echo "$gpuinfo" | awk '/junction/ {print $2}' | awk -F. '{print $1}' | sed 's/+//')
-
-printf "\
-<b><span foreground='$blockcolor' background='$color0'></span>\
-<span foreground='$txtcolor' background='$blockcolor'> %s </span>\
-<span foreground='$color0' background='$blockcolor'></span></b>\n" \
-"$icon ${usage}% ${shader_clock} ${power_usage}W ${temp}°C"
+print_block "$icon ${usage}% ${shader_clock}MHz ${power_usage}W ${temp}°C"

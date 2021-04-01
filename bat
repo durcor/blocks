@@ -2,6 +2,14 @@
 # shellcheck disable=1090,2154
 # Give a battery name (e.g. BAT0) as an argument.
 
+if [ "$1" ]; then
+	bat_dev=$1
+else
+	bat_dev="BAT0"
+fi
+
+[ -d /sys/class/power_supply/$bat_dev ] || exit 1
+
 case $BLOCK_BUTTON in
     1) # Left Click
         ;;
@@ -18,10 +26,10 @@ esac
 #   no battery/dead
 
 # capacity=$(echo scale=4\;$(cat /sys/class/power_supply/BAT0/charge_now)/$(cat /sys/class/power_supply/BAT0/charge_full)\*100 | bc | sed 's/0\{1,\}$//') || exit
-capacity=$(cat /sys/class/power_supply/BAT0/capacity)
-kernelcapacity=$(cat /sys/class/power_supply/BAT0/charge_now)
-kernelalarm=$(cat /sys/class/power_supply/BAT0/alarm)
-status=$(cat /sys/class/power_supply/BAT0/status)
+capacity=$(cat /sys/class/power_supply/$bat_dev/capacity)
+kernelcapacity=$(cat /sys/class/power_supply/$bat_dev/charge_now)
+kernelalarm=$(cat /sys/class/power_supply/$bat_dev/alarm)
+status=$(cat /sys/class/power_supply/$bat_dev/status)
 
 . ~/.cache/wal/colors.sh
 

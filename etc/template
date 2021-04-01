@@ -1,0 +1,32 @@
+#!/bin/sh
+# shellcheck disable=1090,2154
+
+notif_identifier="i3b$(echo "$0" | tr '/' '\n' | tail -1)"
+notif="notify-send -h string:x-canonical-private-synchronous:$notif_identifier"
+
+icon=""
+. "${XDG_CACHE_HOME:-$HOME/.cache}/wal/colors.sh"
+blockcolor=$color15
+txtcolor=$color0
+
+command=""
+
+case $BLOCK_BUTTON in
+    1) # Left Click
+	    $notif
+        ;;
+    2) # Middle Click
+        ;;
+    3) # Right Click
+        ;;
+    4) # Scroll Up
+        ;;
+    5) # Scroll Down
+        ;;
+esac
+
+printf "\
+<b><span foreground='$blockcolor' background='$color0'></span>\
+<span foreground='$txtcolor' background='$blockcolor'> %s</span>\
+<span foreground='$color0' background='$blockcolor'></span></b>\n" \
+"$icon $command"

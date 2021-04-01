@@ -4,8 +4,8 @@
 notif_identifier="i3b$(echo "$0" | tr '/' '\n' | tail -1)"
 notif="notify-send -h string:x-canonical-private-synchronous:$notif_identifier"
 
-if [ -e "${XDG_CACHE_HOME:-$HOME/.cache}/wal/colors.sh" ]; then
-	. "${XDG_CACHE_HOME:-$HOME/.cache}/wal/colors.sh"
+if [ -e "${XDG_CACHE_HOME-$HOME/.cache}/wal/colors.sh" ]; then
+	. "${XDG_CACHE_HOME-$HOME/.cache}/wal/colors.sh"
 	blockcolor=$color6
 	txtcolor=$color0
 else
@@ -34,7 +34,9 @@ case $BLOCK_BUTTON in
 			echo m > "$TEMPERATURE_UNIT" ;} || echo u > "$TEMPERATURE_UNIT"
         ;;
     3) # Right Click
-        $TERMINAL --class=float -d 125 41 --hold -e \
+        # $TERMINAL --class=float -d 125 41 --hold -e \
+			# curl "wttr.in/$current_location?$wttr_unit"
+        $TERMINAL --class=float --hold -e \
 			curl "wttr.in/$current_location?$wttr_unit"
         ;;
     4) # Scroll Up

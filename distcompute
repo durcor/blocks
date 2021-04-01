@@ -1,12 +1,6 @@
 #!/bin/sh
 # shellcheck disable=1090,2154
 
-. "${XDG_CACHE_HOME-$HOME/.cache}/wal/colors.sh"
-blockcolor=$color12
-txtcolor=$color8
-
-fah_log="${XDG_CONFIG_HOME-$HOME/.config}/fah/log.txt"
-
 # Common distributed computing binaries:
 # - boinc-client
 # - foldingathome
@@ -22,15 +16,19 @@ if systemctl is-enabled boinc-client >/dev/null; then
 	project_command=boinc-client
 elif systemctl --user is-enabled foldingathome >/dev/null; then
 	dist_prj=""
-	block_notify="notify-send -i ~/.local/bin/i3blocks/img/f@h.png -h string:x-canonical-private-synchronous:i3bdistcompute"
+	notif="notify-send -i ~/.local/bin/i3blocks/img/f@h.png -h string:x-canonical-private-synchronous:i3bdistcompute"
 	project_command=foldingathome
 	perm_level="systemctl --user"
-	status_command(){
-		$block_notify "F@H Status" "$(tail ~/.config/fah/log.txt)"
-	}
+	log="${XDG_CONFIG_HOME-$HOME/.config}/fah/log.txt"
+	status_command() { $notif "F@H Status" "$(tail "$log")" ;}
 else
-	exit
+	exit 1
 fi
+
+. "${XDG_CACHE_HOME-$HOME/.cache}/wal/colors.sh"
+blockcolor=$color12
+txtcolor=$color8
+
 
 case $BLOCK_BUTTON in
 	1) # Left Click
@@ -38,13 +36,13 @@ case $BLOCK_BUTTON in
 		;;
 	2) # Middle Click
 		if $perm_level is-active $project_command >/dev/null; then
-			$block_notify "Stopping $project_command"
+			$notif "Stopping $project_command"
 			$perm_level stop $project_command
-			$block_notify "$project_command stopped"
+			$notif "$project_command stopped"
 		else
-			$block_notify "Starting $project_command"
+			$notif "Starting $project_command"
 			$perm_level start $project_command
-			$block_notify "$project_command started"
+			$notif "$project_command started"
 		fi
 		;;
 	3) # Right Click
@@ -71,13 +69,13 @@ esac
 
 get_steps_per_second()
 {
-	cur_step=$(tail "$fah_log" | grep -v "Web" | grep -v "WARNING" | tail -1)
-	cur_step_count=$(echo "$cur_step" | awk '{print $2}')
-	cur_step_seconds=$(echo "$cur_step" | awk '{print $1}' | awk -F':' '{print $1*60*60 + $2*60 + $3}')
+	cur_step=$(tail "$log" | grep -v "Web" | grep -v "WARNING" | tail -1)
+	cur_step_count=$(echo "$cur_step" | cut -d' ' -f2)
+	cur_step_seconds=$(echo "$cur_step" | cut -d' ' -f1 | awk -F':' '{print $1*60*60 + $2*60 + $3}')
 
-	prev_step=$(tail "$fah_log" | grep -v "Web" | grep -v "WARNING" | tail -2 | head -1)
-	prev_step_count=$(echo "$prev_step" | awk '{print $2}')
-	prev_step_seconds=$(echo "$prev_step" | awk '{print $1}' | awk -F':' '{print $1*60*60 + $2*60 + $3}')
+	prev_step=$(tail "$log" | grep -v "Web" | grep -v "WARNING" | tail -2 | head -1)
+	prev_step_count=$(echo "$prev_step" | cut -d' ' -f2)
+	prev_step_seconds=$(echo "$prev_step" | cut -d' ' -f1 | awk -F':' '{print $1*60*60 + $2*60 + $3}')
 
 	steps_per_second=$(echo "($cur_step_count - $prev_step_count)/($cur_step_seconds - $prev_step_seconds)" | bc)
 
@@ -87,40 +85,38 @@ get_steps_per_second()
 if [ "$project_command" = "boinc-client" ]; then
 	return
 else
-	current_fah_status=$(tail -1 "$fah_log")
-	# TODO Use switch case
-	# case "$current_fah_status" in
-	# 	*"Except"*|*"exit"*)
-	# 		block_out=""
-	# 		;;
-	# 	*"Complete"*)
-	# 		block_out="$(tail -1 "$fah_log" | awk '{print $7}')"
-	# 		get_steps_per_second
-	# 		;;
-	# 	etc)....
-	# esac
-
-	if echo "$current_fah_status" | grep -q 'Except\|exit'; then
-		block_out=""
-	elif echo "$current_fah_status" | grep -q 'Complete'; then
-		block_out="$(tail -1 "$fah_log" | awk '{print $7}')"
-		get_steps_per_second
-	elif echo "$current_fah_status" | grep -q 'Temperature\|Web'; then
-		block_out="$(tail -20 "$fah_log" | grep 'Complete' | tail -1 | awk '{print $7}')"
-		get_steps_per_second
-	elif echo "$current_fah_status" | grep -q 'checkpoint'; then
-		block_out=""
-	elif echo "$current_fah_status" | grep -q 'Download'; then
-		block_out=""
-	elif echo "$current_fah_status" | grep 'Upload'; then
-		block_out=""
-	else
-		block_out=""
-	fi
+	current_fah_status=$(tail -1 "$log")
+	case "$current_fah_status" in
+		*'Except'*|*'exit'*)
+			block_out=""
+			;;
+		*'Complete'*)
+			block_out="$(tail -1 "$log" | cut -d' ' -f7)"
+			get_steps_per_second
+			;;
+		*'Temperature'*|*'Web')
+			block_out="$(tail -20 "$log" | grep 'Complete' | tail -1 |
+				cut -d' ' -f7)"
+			get_steps_per_second
+			;;
+		*'checkpoint'*)
+			block_out=""
+			;;
+		*'Download'*)
+			block_out=""
+			;;
+		*'Upload'*)
+			block_out=""
+			;;
+		*)
+			block_out=""
+			;;
+	esac
 fi
 
-printf "\
-<b><span foreground='$blockcolor' background='$color0'></span>\
-<span foreground='$txtcolor' background='$blockcolor'> %s</span>\
-<span foreground='$color0' background='$blockcolor'></span></b>\n" \
-"$dist_prj $block_out "
+printf "<b><span foreground='%s' background='%s'></span>" \
+	"$blockcolor" "$color0"
+printf "<span foreground='%s' background='%s'> %s </span>" \
+	"$txtcolor" "$blockcolor" "$dist_prj $block_out"
+printf "<span foreground='%s' background='%s'></span></b>\n" \
+	"$color0" "$blockcolor"

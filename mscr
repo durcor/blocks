@@ -1,14 +1,14 @@
 #!/bin/sh
 # shellcheck disable=1090,2154,2086
 
+ping -c 1 stonks.icu >/dev/null || exit 1
+
 STONK_LIST="${XDG_CONFIG_HOME-$HOME/.config}/i3blocks/mscr"
 . "${XDG_CACHE_HOME-$HOME/.cache}/wal/colors.sh"
 
 label=
 blockcolor=$color7
 txtcolor=$color8
-
-ping -c 1 stonks.icu >/dev/null || exit 1
 
 # FIXME: stonks seems to encounter a bug once in a while where it will not
 # exit correctly and loop forever

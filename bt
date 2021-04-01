@@ -1,16 +1,18 @@
 #!/bin/sh
 # shellcheck disable=1090,2154
 
+systemctl is-active bluetooth >/dev/null || exit 1
+
 . "${XDG_CACHE_HOME-$HOME/.cache}/wal/colors.sh"
 blockcolor=$color11
 txtcolor=$color8
 
-connected_devices=$(
-    for dev in $(bluetoothctl devices | awk '{print $2}'); do
-        bluetoothctl info "$dev"
-    done | grep -B8 "Connected: yes" | awk '/Device/{print $2}')
-
-btinfo=$(for dev in $connected_devices; do bluetoothctl info "$dev"; done)
+btinfo=$(for dev in $(bluetoothctl devices | cut -d ' ' -f2); do
+			bluetoothctl info "$dev"; done)
+connected_devices=$(echo "$btinfo" | grep -B8 'Connected: yes' |
+	grep Device | cut -d ' ' -f2)
+connected_devices_info=$(for dev in $connected_devices; do echo "$btinfo" |
+	sed -n "/$dev/,/^Device/p"; done)
 
 if [ -d "/usr/share/icons/HighContrast" ]; then
     notif_icon="/usr/share/icons/HighContrast/256x256/status/bluetooth-active.png"
@@ -35,7 +37,7 @@ case $BLOCK_BUTTON in
         fi
         ;;
     3) # Right Click
-        notify-send -i $notif_icon "Bluetooth Info" "$btinfo"
+        notify-send -i $notif_icon "Bluetooth Info" "$connected_devices_info"
         ;;
     4) # Scroll Up
         ;;
@@ -43,25 +45,33 @@ case $BLOCK_BUTTON in
         ;;
 esac
 
-! systemctl is-active bluetooth >/dev/null && { echo " x" ; exit 1 ;}
-
-if ! bluetoothctl info >/dev/null; then
-    out="${out}X"
+if [ ! "$connected_devices" ]; then
+    out="X"
 else
+	# TODO: Provide identifiable information per connected device
+	# - First letter of device name?
     for device in $connected_devices; do
-        case "$(bluetoothctl info "$device" | awk '/Icon/ {print $2}')" in
+		current_device_info=$(echo "$btinfo" | sed -n "/$device/,/^Device/$!p")
+		case "$(echo "$current_device_info" | grep Icon | cut -d ' ' -f2)" in
             "audio-card")
                 out="${out}"
                 ;;
             "input-gaming")
                 out="${out}"
                 ;;
+            "phone")
+                out="${out}"
+                ;;
             *)
                 out="${out}X"
                 ;;
         esac
-		battery_level=$(btbat "$device" | tr ' ' '\n' | tail -1)
-		echo "$battery_level" | grep -q '%' && out="$out ($battery_level) "
+		battery_level=$(echo "$current_device_info" | grep 'Percentage' | cut -d ' ' -f4)
+		# Account for bug when Battery level doesn't show up when HFP/HSP
+		# devices are missing.
+		# [ "$battery_level" ] || { bluetoothctl disconnect "$device"; sleep 3;
+		# 						  bluetoothctl connect "$device"; }
+		out="$out$(echo $battery_level | sed -e 's/)/%)/g' -e 's/(/ (/g') "
     done
 fi
 
@@ -69,8 +79,9 @@ out=$(echo "$out" | sed 's/ $//')
 
 icon=
 
-printf "\
-<b><span foreground='$blockcolor' background='$color0'></span>\
-<span foreground='$txtcolor' background='$blockcolor'> %s </span>\
-<span foreground='$color0' background='$blockcolor'></span></b>\n" \
-"$icon $out"
+printf "<b><span foreground='%s' background='%s'></span>" \
+	"$blockcolor" "$color0"
+printf "<span foreground='%s' background='%s'> %s </span>" \
+	"$txtcolor" "$blockcolor" "$icon $out"
+printf "<span foreground='%s' background='%s'></span></b>\n" \
+	"$color0" "$blockcolor"
