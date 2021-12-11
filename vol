@@ -1,6 +1,8 @@
 #!/bin/sh
 # shellcheck disable=1090,2154
 
+# TODO: Move to PipeWire-native API
+
 . "${XDG_CACHE_HOME-$HOME/.cache}/wal/colors.sh"
 blockcolor=$color1
 txtcolor=$color0
@@ -16,10 +18,10 @@ case $BLOCK_BUTTON in
         systemctl --user restart pipewire pipewire-pulse pipewire-media-session
         ;;
     4) # Scroll Up
-        pamixer -i 5
+        pamixer -i 1
         ;;
     5) # Scroll Down
-        pamixer -d 5
+        pamixer -d 1
         ;;
     8) # Backward Button
         ;;
@@ -50,6 +52,8 @@ elif [ "$vol" -lt 70 ]; then
 else
     icon=""
 fi
+
+pgrep easyeffects >/dev/null && icon="$icon "
 
 printf "<b><span foreground='%s' background='%s'></span>" \
 	"$blockcolor" "$color0"

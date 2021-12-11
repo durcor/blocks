@@ -1,9 +1,12 @@
 #!/bin/sh
 # shellcheck disable=1090,2154,2086
 
-playerctl metadata >/dev/null || exit
+playerctl metadata >/dev/null || exit 1
 
-. "${XDG_CACHE_HOME-$HOME/.cache}/wal/colors.sh"
+notif_identifier="i3b$(echo "$0" | tr '/' '\n' | tail -1)"
+notif="notify-send -h string:x-canonical-private-synchronous:$notif_identifier"
+
+. "${XDG_CACHE_HOME:-$HOME/.cache}/wal/colors.sh"
 blockcolor=$color8
 txtcolor=$color7
 
@@ -12,7 +15,8 @@ for player in mpd spotify mpv; do
         artist="$(playerctl -p $player metadata artist)"
         title="$(playerctl -p $player metadata title)"
         current_player="-p $player "
-	}
+        break
+    }
 done 2>/dev/null
 # Silence any errors if a player can't be found.
 
@@ -37,6 +41,12 @@ case $BLOCK_BUTTON in
         ;;
     5) # Scroll Down
         playerctl ${current_player}position 5-
+        ;;
+    8|9)
+        $notif \
+            -i "$(playerctl ${current_player}metadata | awk '/artUrl/{$1="";$2="";print}' | xargs)" \
+            "$(playerctl ${current_player}metadata | awk '/artist/{$1="";$2="";print}' | xargs)" \
+            "$(playerctl ${current_player}metadata | awk '/title/{$1="";$2="";print}' | xargs)"
         ;;
 esac
 

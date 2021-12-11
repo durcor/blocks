@@ -53,7 +53,7 @@ else
     for device in $connected_devices; do
 		current_device_info=$(echo "$btinfo" | sed -n "/$device/,/^Device/$!p")
 		case "$(echo "$current_device_info" | grep Icon | cut -d ' ' -f2)" in
-            "audio-card")
+            "audio-headphones")
                 out="${out}"
                 ;;
             "input-gaming")
@@ -69,11 +69,11 @@ else
 		# TODO: Only display battery level if present.
 		# - grep ps for bluetoothd -E
 		battery_level=$(echo "$current_device_info" | grep 'Percentage' | cut -d ' ' -f4)
-		# Account for bug when Battery level doesn't show up when HFP/HSP
+		# NOTE: Account for bug when Battery level doesn't show up when HFP/HSP
 		# devices are missing.
 		# [ "$battery_level" ] || { bluetoothctl disconnect "$device"; sleep 3;
 		# 						  bluetoothctl connect "$device"; }
-		out="$out$(echo $battery_level | sed -e 's/)/%)/g' -e 's/(/ (/g') "
+		out="$out$(echo "$battery_level" | sed -e 's/)/%)/g' -e 's/(/ (/g') "
     done
 fi
 

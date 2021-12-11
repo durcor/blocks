@@ -13,7 +13,7 @@ case $BLOCK_BUTTON in
         systemctl --user restart mailsync
         ;;
     3) # Right Click
-        systemctl --user restart mailsync 
+        mw -Y
         ;;
 esac
 

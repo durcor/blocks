@@ -1,0 +1,43 @@
+#!/bin/sh
+
+crypto=doge
+
+. "${XDG_CACHE_HOME-$HOME/.cache}/wal/colors.sh"
+blockcolor=$color1
+txtcolor=$color0
+
+case $BLOCK_BUTTON in
+	1) setsid "$TERMINAL" -e less -Srf
+		;;
+	2)
+		;;
+	6) "$TERMINAL" -e "$EDITOR" "$0"
+		;;
+esac
+
+# Usage:
+#	price <url> <Name of currency> <icon>
+#	price bat "Basic Attention Token" 🦁
+# When the name of the currency is multi-word, put it in quotes.
+
+# interval="@14d"	# History contained in chart preceded by '@' (7d = 7 days)
+
+ping -q -c 1 rate.sx >/dev/null || exit 1
+
+crypto_info=$(curl -s "https://rate.sx/$crypto")
+price=$(echo "$crypto_info" | grep end | cut -d' ' -f8)
+delta=$(echo "$crypto_info" | head -2 | xargs | tr ' ' '\n' | tail -1)
+
+case $crypto in
+	btc) icon='B';;
+	eth) icon='';;
+	doge) icon='🐕';;
+	xmr) icon='M';;
+esac
+
+printf "<b><span foreground='%s' background='%s'></span>" \
+	"$blockcolor" "$color0"
+printf "<span foreground='%s' background='%s'> %s </span>" \
+	"$txtcolor" "$blockcolor" "$icon $(echo $crypto | tr '[:lower:]' '[:upper:]') $price ($delta)"
+printf "<span foreground='%s' background='%s'></span></b>\n" \
+	"$color0" "$blockcolor"
