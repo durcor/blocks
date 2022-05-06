@@ -3,7 +3,7 @@
 
 systemctl is-active bluetooth >/dev/null || exit 1
 
-. "${XDG_CACHE_HOME-$HOME/.cache}/wal/colors.sh"
+. "${XDG_CACHE_HOME:-$HOME/.cache}/wal/colors.sh"
 blockcolor=$color11
 txtcolor=$color8
 
@@ -70,9 +70,10 @@ else
             out="${out}X"
             ;;
         esac
-        # TODO: Only display battery level if present.
-        # - grep ps for bluetoothd -E
-        battery_level=$(echo "$current_device_info" | grep 'Percentage' | cut -d ' ' -f4)
+        # Only display battery level if feature available.
+        grep -q 'Experimental.=.true' /etc/bluetooth/main.conf ||
+            pgrep -f 'bluetoothd -E' &&
+            battery_level=$(echo "$current_device_info" | grep 'Percentage' | cut -d ' ' -f4)
         # NOTE: Account for bug when Battery level doesn't show up when HFP/HSP
         # devices are missing.
         # [ "$battery_level" ] || { bluetoothctl disconnect "$device"; sleep 3;
