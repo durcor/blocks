@@ -3,45 +3,49 @@
 
 # TODO: Move to PipeWire-native API
 
+remove_barrier_spaces() {
+    sed -e 's/^[ \t]*//;s/[ \t]*$//'
+}
+
 . "${XDG_CACHE_HOME-$HOME/.cache}/wal/colors.sh"
 blockcolor=$color1
 txtcolor=$color0
 
 case $BLOCK_BUTTON in
-    1) # Left Click
-        $TERMINAL --class float -e ncpamixer
-        ;;
-    2) # Middle Click
-        pamixer --toggle-mute
-        ;;
-    3) # Right Click
-        systemctl --user restart pipewire pipewire-pulse pipewire-media-session
-        ;;
-    4) # Scroll Up
-        pamixer -i 1
-        ;;
-    5) # Scroll Down
-        pamixer -d 1
-        ;;
-    8) # Backward Button
-        ;;
-    9) # Forward Button
-        ;;
+1) # Left Click
+    $TERMINAL --class float -e ncpamixer
+    ;;
+2) # Middle Click
+    pamixer --toggle-mute
+    ;;
+3) # Right Click
+    systemctl --user restart pipewire pipewire-pulse pipewire-media-session
+    ;;
+4) # Scroll Up
+    pamixer -i 1
+    ;;
+5) # Scroll Down
+    pamixer -d 1
+    ;;
+8) # Backward Button
+    ;;
+9) # Forward Button
+    ;;
 esac
 
 default_sink=$(pactl info | grep 'Default Sink' | cut -d' ' -f3)
 default_sink_info=$(pactl list sinks | sed -n "/$default_sink/,/Formats/p")
 default_sink_name=$(echo "$default_sink_info" | grep Description |
-	cut -d':' -f2 | xargs)
+    cut -d':' -f2 | remove_barrier_spaces)
 echo "$default_sink_info" | grep -q bluez && {
-	bt_codec=$(echo "$default_sink_info" | grep 'api.bluez..codec' |
-		cut -d' ' -f3 | sed -e 's/"//g' -e 's/_/-/g' |
-		tr '[:lower:]' '[:upper:]')
-	default_sink_name="$default_sink_name ($bt_codec)"
+    bt_codec=$(echo "$default_sink_info" | grep 'api.bluez..codec' |
+        cut -d' ' -f3 | sed -e 's/"//g' -e 's/_/-/g' |
+        tr '[:lower:]' '[:upper:]')
+    default_sink_name="$default_sink_name ($bt_codec)"
 }
 muted=$(echo "$default_sink_info" | grep Mute | cut -d' ' -f2)
 vol=$(echo "$default_sink_info" | grep -m1 Volume | cut -d'/' -f2 |
-	cut -d'%' -f1 | xargs)
+    cut -d'%' -f1 | remove_barrier_spaces)
 
 if [ "$muted" = "yes" ]; then
     icon=""
@@ -56,8 +60,8 @@ fi
 pgrep easyeffects >/dev/null && icon="$icon "
 
 printf "<b><span foreground='%s' background='%s'></span>" \
-	"$blockcolor" "$color0"
+    "$blockcolor" "$color0"
 printf "<span foreground='%s' background='%s'> %s </span>" \
-	"$txtcolor" "$blockcolor" "$icon $default_sink_name [$vol%]"
+    "$txtcolor" "$blockcolor" "$icon $default_sink_name [$vol%]"
 printf "<span foreground='%s' background='%s'></span></b>\n" \
-	"$color0" "$blockcolor"
+    "$color0" "$blockcolor"
