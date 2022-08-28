@@ -8,78 +8,78 @@ blockcolor=$color11
 txtcolor=$color8
 
 btinfo=$(for dev in $(bluetoothctl devices | cut -d ' ' -f2); do
-    bluetoothctl info "$dev"
+	bluetoothctl info "$dev"
 done)
-connected_devices=$(echo "$btinfo" | grep -B8 'Connected: yes' |
-    grep Device | cut -d ' ' -f2)
+connected_devices=$(echo "$btinfo" | grep -B9 'Connected: yes' |
+	grep Device | cut -d ' ' -f2)
 connected_devices_info=$(for dev in $connected_devices; do echo "$btinfo" |
-    sed -n "/$dev/,/^Device/p"; done)
+	sed -n "/$dev/,/^Device/p"; done)
 
 if [ -d "/usr/share/icons/HighContrast" ]; then
-    notif_icon="/usr/share/icons/HighContrast/256x256/status/bluetooth-active.png"
+	notif_icon="/usr/share/icons/HighContrast/256x256/status/bluetooth-active.png"
 elif [ -d "/usr/share/icons/Adwaita" ]; then
-    notif_icon="/usr/share/icons/Adwaita/96x96/devices/bluetooth-symbolic.symbolic.png"
+	notif_icon="/usr/share/icons/Adwaita/96x96/devices/bluetooth-symbolic.symbolic.png"
 else
-    # TODO: curl a default bluetooth icon.
-    true
+	# TODO: curl a default bluetooth icon.
+	true
 fi
 
 case $BLOCK_BUTTON in
 1) # Left Click
-    bt-select
-    ;;
+	bt-select
+	;;
 2) # Middle Click
-    if systemctl is-active bluetooth >/dev/null; then
-        sudo systemctl stop bluetooth &
-        notify-send -i $notif_icon "Stopping Bluetooth service"
-    else
-        sudo systemctl restart bluetooth &
-        notify-send -i $notif_icon "Starting Bluetooth service"
-    fi
-    ;;
+	if systemctl is-active bluetooth >/dev/null; then
+		sudo systemctl stop bluetooth &
+		notify-send -i $notif_icon "Stopping Bluetooth service"
+	else
+		sudo systemctl restart bluetooth &
+		notify-send -i $notif_icon "Starting Bluetooth service"
+	fi
+	;;
 3) # Right Click
-    notify-send -i $notif_icon "Bluetooth Info" "$connected_devices_info"
-    ;;
+	notify-send -i $notif_icon "Bluetooth Info" "$connected_devices_info"
+	;;
 4) # Scroll Up
-    ;;
+	;;
 5) # Scroll Down
-    ;;
+	;;
 esac
 
 if [ ! "$connected_devices" ]; then
-    out="X"
+	out="X"
 else
-    # TODO: Provide identifiable information per connected device
-    # - First letter of device name?
-    for device in $connected_devices; do
-        current_device_info=$(echo "$btinfo" | sed -n "/$device/,/^Device/$!p")
-        case "$(echo "$current_device_info" | grep Icon | cut -d ' ' -f2)" in
-        "audio-card")
-            out="${out}"
-            ;;
-        "audio-headphones" | "audio-headset")
-            out="${out}"
-            ;;
-        "input-gaming")
-            out="${out}"
-            ;;
-        "phone")
-            out="${out}"
-            ;;
-        *)
-            out="${out}X"
-            ;;
-        esac
-        # Only display battery level if feature available.
-        grep -q 'Experimental.=.true' /etc/bluetooth/main.conf ||
-            pgrep -f 'bluetoothd -E' &&
-            battery_level=$(echo "$current_device_info" | grep 'Percentage' | cut -d ' ' -f4)
-        # NOTE: Account for bug when Battery level doesn't show up when HFP/HSP
-        # devices are missing.
-        # [ "$battery_level" ] || { bluetoothctl disconnect "$device"; sleep 3;
-        # 						  bluetoothctl connect "$device"; }
-        out="$out$(echo "$battery_level" | sed -e 's/)/%)/g' -e 's/(/ (/g') "
-    done
+	# TODO: Provide identifiable information per connected device
+	# - First letter of device name?
+	for device in $connected_devices; do
+		current_device_info=$(echo "$btinfo" | sed -n "/$device/,/^Device/$!p")
+		case "$(echo "$current_device_info" | grep Icon | cut -d ' ' -f2)" in
+		"audio-card")
+			out="${out}"
+			;;
+		"audio-headphones" | "audio-headset")
+			out="${out}"
+			;;
+		"input-gaming")
+			out="${out}"
+			;;
+		"phone")
+			out="${out}"
+			;;
+		*)
+			out="${out}X"
+			;;
+		esac
+		# Only display battery level if feature available.
+		grep -q 'Experimental.=.true' /etc/bluetooth/main.conf ||
+			pgrep -f 'bluetoothd -E' &&
+			battery_level=$(echo "$current_device_info" | grep 'Percentage' | cut -d ' ' -f4)
+		# NOTE: Account for bug when Battery level doesn't show up when HFP/HSP
+		# devices are missing.
+		# [ "$battery_level" ] || { bluetoothctl disconnect "$device"; sleep 3;
+		# 						  bluetoothctl connect "$device"; }
+		out="$out$(echo "$battery_level" | sed -e 's/)/%)/g' -e 's/(/ (/g') "
+	done
 fi
 
 out=$(echo "$out" | sed 's/ $//')
@@ -87,8 +87,8 @@ out=$(echo "$out" | sed 's/ $//')
 icon=
 
 printf "<b><span foreground='%s' background='%s'></span>" \
-    "$blockcolor" "$color0"
+	"$blockcolor" "$color0"
 printf "<span foreground='%s' background='%s'> %s </span>" \
-    "$txtcolor" "$blockcolor" "$icon $out"
+	"$txtcolor" "$blockcolor" "$icon $out"
 printf "<span foreground='%s' background='%s'></span></b>\n" \
-    "$color0" "$blockcolor"
+	"$color0" "$blockcolor"
