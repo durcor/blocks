@@ -10,44 +10,44 @@ notif="notify-send -h string:x-canonical-private-synchronous:$notif_identifier"
 blockcolor=$color8
 txtcolor=$color7
 
-for player in mpd spotify mpv; do
-    [ "$(playerctl -p $player status)" = "Playing" ] && {
-        artist="$(playerctl -p $player metadata artist)"
-        title="$(playerctl -p $player metadata title)"
-        current_player="-p $player "
-        break
-    }
+for player in mpd spotifyd spotify mpv; do
+	[ "$(playerctl -p $player status)" = "Playing" ] && {
+		artist="$(playerctl -p $player metadata artist)"
+		title="$(playerctl -p $player metadata title)"
+		current_player="-p $player "
+		break
+	}
 done 2>/dev/null
 # Silence any errors if a player can't be found.
 
 [ "$current_player" ] || {
-    artist="$(playerctl metadata artist)"
-    title="$(playerctl metadata title)"
-    current_player=""
+	artist="$(playerctl metadata artist)"
+	title="$(playerctl metadata title)"
+	current_player=""
 }
 
 case $BLOCK_BUTTON in
-    1) # Left Click
-        playerctl ${current_player}previous
-        ;;
-    2) # Middle Click
-        playerctl ${current_player}play-pause
-        ;;
-    3) # Right Click
-        playerctl ${current_player}next
-        ;;
-    4) # Scroll Up
-        playerctl ${current_player}position 5+
-        ;;
-    5) # Scroll Down
-        playerctl ${current_player}position 5-
-        ;;
-    8|9)
-        $notif \
-            -i "$(playerctl ${current_player}metadata | awk '/artUrl/{$1="";$2="";print}' | xargs)" \
-            "$(playerctl ${current_player}metadata | awk '/artist/{$1="";$2="";print}' | xargs)" \
-            "$(playerctl ${current_player}metadata | awk '/title/{$1="";$2="";print}' | xargs)"
-        ;;
+1) # Left Click
+	playerctl ${current_player}previous
+	;;
+2) # Middle Click
+	playerctl ${current_player}play-pause
+	;;
+3) # Right Click
+	playerctl ${current_player}next
+	;;
+4) # Scroll Up
+	playerctl ${current_player}position 5+
+	;;
+5) # Scroll Down
+	playerctl ${current_player}position 5-
+	;;
+8 | 9)
+	$notif \
+		-i "$(playerctl ${current_player}metadata | awk '/artUrl/{$1="";$2="";print}' | xargs)" \
+		"$(playerctl ${current_player}metadata | awk '/artist/{$1="";$2="";print}' | xargs)" \
+		"$(playerctl ${current_player}metadata | awk '/title/{$1="";$2="";print}' | xargs)"
+	;;
 esac
 
 # i3blocks doesn't seem to like ampersands

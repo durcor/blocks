@@ -5,8 +5,7 @@
 blockcolor=$color9
 txtcolor=$color0
 
-print_block()
-{
+print_block() {
 	input=$1
 	printf "<b><span foreground='%s' background='%s'></span>" \
 		"$blockcolor" "$color0"
@@ -19,57 +18,66 @@ print_block()
 # GPUs aren't usually hot-swapped unless it's a thunderbolt eGPU system,
 # so just check the GPU's identity once per boot
 [ -f /tmp/i3bgpu ] || {
-    if command -v glxinfo >/dev/null; then
-        glxinfo -B | awk -F':' '/OpenGL renderer string/ {print $2}' | xargs |
-            tr ' ' '\n' | head -1 > /tmp/i3bgpu
-    else
-        lspci | awk -F':' '/VGA/ {print $3}' | xargs | tr ' ' '\n' | head -1 |
-            sed 's|Advanced|AMD|' > /tmp/i3bgpu
-    fi ;}
+	if command -v glxinfo >/dev/null; then
+		glxinfo -B | awk -F':' '/OpenGL renderer string/ {print $2}' | xargs |
+			tr ' ' '\n' | head -1 >/tmp/i3bgpu
+	else
+		lspci | awk -F':' '/VGA/ {print $3}' | xargs | tr ' ' '\n' | head -1 |
+			sed 's|Advanced|AMD|' >/tmp/i3bgpu
+	fi
+}
 
 case "$(cat /tmp/i3bgpu)" in
-    "AMD")
-        monitor_program="radeontop -c"
-        lm_sensors_name="amdgpu"
-        ;;
-    "Intel")
-        ;;
-    "NVIDIA")
-        ;;
+"AMD")
+	monitor_program="radeontop -c"
+	lm_sensors_name="amdgpu"
+	;;
+"Intel") ;;
+
+"NVIDIA") ;;
+
 esac
 
-gpu_info_dir=/sys/class/drm/card0/device/
+gpu_info_dir=/sys/class/drm/card0/device
 
-shader_clock=$(echo $(cat $gpu_info_dir/hwmon/hwmon1/freq1_input)/1000000 | bc)
+hwmon_dev=$(ls $gpu_info_dir/hwmon)
+
+[ -n "$hwmon_dev" ] || {
+	echo >&2 "Error: Your GPU is not supported."
+	exit 1
+}
+
+shader_clock=$(($(cat "$gpu_info_dir/hwmon/$hwmon_dev/freq1_input") / 1000000))
 
 case $BLOCK_BUTTON in
-    1) # Left Click
-		gpuinfo=$(sensors | grep $lm_sensors_name -A10)
-		notify-send \
-			-h string:x-canonical-private-synchronous:i3bamdgpu \
-			-i ~/.local/bin/i3blocks/img/gpu.png \
-			"Voltages/Temps/Fan RPM/Power Usage for my$(
-				glxinfo -B | awk -F':' '/OpenGL renderer string/{print $2}' | awk -F'(' '{print $1}'
-				)" "$(echo "$gpuinfo" | grep -A8 vddgfx)"
-				;;
-    2) # Middle Click
-        $TERMINAL --class float -e "$monitor_program"
-        ;;
-    3) # Right Click
-        notify-send \
-            -h string:x-canonical-private-synchronous:i3bamdgpu \
-            -i ~/.local/bin/i3blocks/img/gpu.png \
-            "Clock/VRAM Stats for my$(glxinfo -B | awk -F':' '/OpenGL renderer string/{print $2}' | awk -F'(' '{print $1}'
-                    )" "Shader Usage: $(cat $gpu_info_dir/gpu_busy_percent)%
+1) # Left Click
+	gpuinfo=$(sensors | grep $lm_sensors_name -A10)
+	notify-send \
+		-h string:x-canonical-private-synchronous:i3bamdgpu \
+		-i ~/.local/bin/i3blocks/img/gpu.png \
+		"Voltages/Temps/Fan RPM/Power Usage for my$(
+			glxinfo -B | awk -F':' '/OpenGL renderer string/{print $2}' | awk -F'(' '{print $1}'
+		)" "$(echo "$gpuinfo" | grep -A8 vddgfx)"
+	;;
+2) # Middle Click
+	$TERMINAL --class float -e "$monitor_program"
+	;;
+3) # Right Click
+	notify-send \
+		-h string:x-canonical-private-synchronous:i3bamdgpu \
+		-i ~/.local/bin/i3blocks/img/gpu.png \
+		"Clock/VRAM Stats for my$(
+			glxinfo -B | awk -F':' '/OpenGL renderer string/{print $2}' | awk -F'(' '{print $1}'
+		)" "Shader Usage: $(cat $gpu_info_dir/gpu_busy_percent)%
 Memory Usage: $(cat $gpu_info_dir/mem_busy_percent)%
 VRAM Usage: $(echo "$(cat $gpu_info_dir/mem_info_vram_used)"/1000000000 | bc -l | cut -c-3)/$(echo "$(cat $gpu_info_dir/mem_info_vram_total)"/1000000000 | bc -l | cut -c-3)Gi
 Memory Clock: $(grep "\*" $gpu_info_dir/pp_dpm_mclk | awk '{print $2}')
 Shader Clock: $shader_clock"
-        ;;
-    4) # Scroll Up
-        ;;
-    5) # Scroll Down
-        ;;
+	;;
+4) # Scroll Up
+	;;
+5) # Scroll Down
+	;;
 esac
 
 usage=$(cat $gpu_info_dir/gpu_busy_percent)
@@ -88,7 +96,7 @@ icon=""
 #     usage_icon=""
 # fi
 
-power_usage=$(($(cat $gpu_info_dir/hwmon/hwmon1/power1_average)/1000000))
-temp=$(($(cat $gpu_info_dir/hwmon/hwmon1/temp2_input)/1000))
+power_usage=$(($(cat "$gpu_info_dir/hwmon/$hwmon_dev/power1_average") / 1000000))
+temp=$(($(cat "$gpu_info_dir/hwmon/$hwmon_dev/temp2_input") / 1000))
 
 print_block "$icon ${usage}% ${shader_clock}MHz ${power_usage}W ${temp}°C"
