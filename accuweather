@@ -6,8 +6,10 @@ notif="notify-send -h string:x-canonical-private-synchronous:$notif_identifier"
 
 if [ -e "${XDG_CACHE_HOME-$HOME/.cache}/wal/colors.sh" ]; then
     . "${XDG_CACHE_HOME-$HOME/.cache}/wal/colors.sh"
-    blockcolor=$color6
-    txtcolor=$color0
+    # blockcolor=$color6
+    # txtcolor=$color0
+    blockcolor=$color8
+    txtcolor=$color15
 else
     blockcolor="#689d6a"
     txtcolor="#282828"
@@ -20,15 +22,36 @@ TEMPERATURE_UNIT="${XDG_CONFIG_HOME-$HOME/.config}/i3blocks/accuweather-unit"
         echo "m" >"$TEMPERATURE_UNIT"
 }
 
-current_location=$(head -1 "$LOCATION_LIST")
+get_current_weather()
+{
+    current_location=$(head -1 "$LOCATION_LIST")
 
-unit=$(cat "$TEMPERATURE_UNIT")
-wttr_unit="$unit"
-accuweather_unit=$([ "$unit" = u ] && echo 0 || echo 1)
+    unit=$(cat "$TEMPERATURE_UNIT")
+    wttr_unit="$unit"
+    accuweather_unit=$([ "$unit" = u ] && echo 0 || echo 1)
+
+    unit=$(cat "$TEMPERATURE_UNIT")
+    wttr_unit="$unit"
+    accuweather_unit=$([ "$unit" = u ] && echo 0 || echo 1)
+
+    current_location=$(head -1 "$LOCATION_LIST")
+
+    ping -c 1 1.1.1.1 >/dev/null || { icon="X" && exit 1; }
+
+    curl -s "http://rss.accuweather.com/rss/liveweather_rss.asp?metric=$accuweather_unit&locCode=$current_location" |
+            grep "Currently" >/tmp/weather
+
+    current_location_name=$(awk -F':' '/in/{print $1}' /tmp/weather |
+            awk -F'in' '{print $2}' | xargs)
+
+    location_name_spaces_converted=$(echo "$current_location_name" | tr ' ' '+')
+}
+
+get_current_weather
 
 case $BLOCK_BUTTON in
 1) # Left Click
-    $notif "$(curl "wttr.in/$current_location?0&T&Q$wttr_unit")"
+    $notif "$(curl "wttr.in/$location_name_spaces_converted?0&T&Q$wttr_unit")"
     ;;
 2) # Middle Click
     { [ "$(cat "$TEMPERATURE_UNIT")" = u ] &&
@@ -38,46 +61,61 @@ case $BLOCK_BUTTON in
     # $TERMINAL --class=float -d 125 41 --hold -e \
     # curl "wttr.in/$current_location?$wttr_unit"
     $TERMINAL --class=float --hold -e \
-        curl "wttr.in/$current_location?$wttr_unit"
+        curl "wttr.in/$location_name_spaces_converted?$wttr_unit"
     ;;
 4) # Scroll Up
     moved_location=$(head -1 "$LOCATION_LIST")
     other_locations=$(tail -n +2 "$LOCATION_LIST")
     echo "$other_locations" >"$LOCATION_LIST"
     echo "$moved_location" >>"$LOCATION_LIST"
+    get_current_weather
     ;;
 5) # Scroll Down
     next_location=$(tail -1 "$LOCATION_LIST")
     other_locations=$(head -n -1 "$LOCATION_LIST")
     echo "$next_location" >"$LOCATION_LIST"
     echo "$other_locations" >>"$LOCATION_LIST"
+    get_current_weather
     ;;
 esac
 
-unit=$(cat "$TEMPERATURE_UNIT")
-wttr_unit="$unit"
-accuweather_unit=$([ "$unit" = u ] && echo 0 || echo 1)
+current_weather=$(awk -F':' '/Currently:/{print $2}' /tmp/weather | xargs)
 
-current_location=$(head -1 "$LOCATION_LIST")
+full_temperature=$(awk -F':' '/Currently:/{print $3}' /tmp/weather | xargs |
+    sed 's/F/°F/;s/C/°C/;s|</title>||')
 
-ping -c 1 1.1.1.1 >/dev/null || { icon="X" && exit 1; }
+temperature=$(echo "$full_temperature" | awk -F° '{print $1}')
+temperature_unit=$(echo "$full_temperature" | awk -F° '{print $2}')
 
-curl -s "http://rss.accuweather.com/rss/liveweather_rss.asp?metric=$accuweather_unit&locCode=$current_location" |
-    grep "Currently" >/tmp/weather
-
-current_location_name=$(awk -F':' '/in/{print $1}' /tmp/weather |
-    awk -F'in' '{print $2}' | xargs)
-
-current_weather=$(grep Currently: /tmp/weather | awk -F':' '{print $2}' |
-    xargs)
-
-temperature=$(grep Currently: /tmp/weather | awk -F':' '{print $3}' | xargs |
-    sed 's/F/°F/;s/C/°C/' | sed 's|</title>||')
+if [ "$temperature_unit" = F ]; then
+    if [ "$temperature" -ge 95 ]; then
+        # Red
+        temp_color="#ff0000"
+    elif [ "$temperature" -ge 85 ]; then
+        # Orange
+        temp_color="#ff8800"
+    elif [ "$temperature" -ge 75 ]; then
+        # Yellow
+        temp_color="#ffff00"
+    elif [ "$temperature" -ge 65 ]; then
+        # Green
+        temp_color="#00ff00"
+    elif [ "$temperature" -ge 55 ]; then
+        # Light blue
+        temp_color="#0088ff"
+    elif [ "$temperature" -ge 45 ]; then
+        # Blue
+        temp_color="#0000ff"
+    else
+        # Purple
+        temp_color="#8800ff"
+    fi
+fi
 
 case $current_weather in
 "Sunny") icon='' ;;
 "Partly Sunny") icon='' ;;
-"Mostly Sunny") icon='' ;;
+"Mostly Sunny") icon=' ' ;;
 "Intermittent Clouds") icon='' ;;
 "Hazy Sunshine") icon='' ;;
 "Hazy Moonlight") icon='' ;;
@@ -94,11 +132,11 @@ case $current_weather in
 "Mostly Cloudy w/ Showers") icon='' ;;
 "Partly Cloudy w/ Showers") icon='' ;;
 "T-Storms") icon='' ;;
-"Thunderstorms") icon='' ;;
+"Thunderstorms") icon=' ' ;;
 "Mostly Cloudy w/ T-Storms") icon=' ' ;;
-"Mostly Cloudy w/ Snow") icon='' ;;
-"Snow") icon='' ;;
-"Rain and Snow") icon='' ;;
+"Mostly Cloudy w/ Snow") icon=' ' ;;
+"Snow") icon='' ;;
+"Rain and Snow") icon=' ' ;;
 "Partly Cloudy w/ T-Storms") icon='' ;;
 "Rain") icon='' ;;
 "Dreary (Overcast)") icon='' ;;
@@ -108,12 +146,17 @@ case $current_weather in
 *) icon="$current_weather" ;;
 esac
 
-if grep '^font' "${XDG_CONFIG_HOME-$HOME/.config}/i3/config" | grep -q 'Nerd'; then
-    printf "\
-<b><span foreground='$blockcolor' background='$color0'></span>\
-<span foreground='$txtcolor' background='$blockcolor'> %s</span>\
-<span foreground='$color0' background='$blockcolor'></span></b>\n" \
-        "$icon $temperature $current_location_name "
+if [ -t 0 ]; then
+    echo "$icon $temperature $current_location_name"
 else
-    echo "$icon $temperature $current_location_name "
+    printf "<b><span foreground='%s' background='%s'></span>" \
+    	"$blockcolor" "$color0"
+    printf "<span foreground='%s' background='%s'> %s </span>" \
+    	"$temp_color" "$blockcolor" "$icon"
+    printf "<span foreground='%s' background='%s'>%s</span>" \
+    	"$temp_color" "$blockcolor" "$full_temperature"
+    printf "<span foreground='%s' background='%s'> %s </span>" \
+    	"$txtcolor" "$blockcolor" "$current_location_name"
+    printf "<span foreground='%s' background='%s'></span></b>\n" \
+    	"$color0" "$blockcolor"
 fi
